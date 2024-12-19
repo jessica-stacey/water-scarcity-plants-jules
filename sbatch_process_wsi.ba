@@ -1,0 +1,19 @@
+#!/bin/bash -l
+#SBATCH --qos=normal
+#SBATCH --mem=200G
+#SBATCH --ntasks=4
+#SBATCH --time=200
+#SBATCH --mail-user=jessica.stacey@metoffice.gov.uk
+#SBATCH --mail-type=ALL
+#SBATCH --output=/home/h06/jstacey/MSc/logs/process_wsi_%j.out
+#SBATCH --error=/home/h06/jstacey/MSc/logs/process_wsi_%j.out
+#SBATCH --partition=rhel7
+#SBATCH --export=NONE
+export MPLCONFIGDIR=~/.matplotlib_spice
+#PYTHONPATH=/home/h06/jstacey/lib:$PYTHONPATH
+#PYTHONPATH=/home/h06/jstacey/lib/python_libraries:$PYTHONPATH
+#export PYTHONPATH
+conda activate phys_effects
+
+python process_wsi.py
+
