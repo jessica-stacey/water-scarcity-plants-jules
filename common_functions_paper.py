@@ -634,7 +634,7 @@ def calc_median_wsi_by_ar6_region():
 # For basin plots
 
 def get_basin_colour_dict(col, reldiff=False):
-    if col in ['co2_triffid_fix', 'all_noLUC', 'CLIM', 'ALL']:
+    if col in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC', 'CLIM', 'ALL']:
         print('Finding   color for {}'.format(col))
         color_dict = {(5, 10000000000): 'dimgrey',
                       (1, 5): 'darkred',  # dimgrey

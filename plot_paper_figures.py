@@ -1187,7 +1187,7 @@ def preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut'):
     return df
 
 
-def preprocess_fig9_median_wsi_by_basin(experiment_list):
+def preprocess_fig9_median_wsi_by_basin(plot_list):
     '''
     Preprocess data for plotting fig9 - median WSI by basin
     Args:
@@ -1248,9 +1248,9 @@ def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
     from matplotlib import pyplot as plt
     import matplotlib.patches as mpatches
 
-    experiment_list = ['co2_triffid_fix', 'all_noLUC', 'CO2: STOM', 'CO2: STOM+VEG', 'CLIM: VEG', 'CO2: STOM & CLIM+CO2: VEG']
+    plot_list = ['co2_triffid_fix', 'all_noLUC', 'CO2: STOM', 'CO2: STOM+VEG', 'CLIM: VEG', 'CO2: STOM & CLIM+CO2: VEG']
 
-    df = preprocess_fig9_median_wsi_by_basin(experiment_list)
+    df = preprocess_fig9_median_wsi_by_basin(plot_list)
 
     print('Plotting time')
     fig = plt.figure(figsize=(14, 8))
@@ -1258,7 +1258,7 @@ def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
     letters = 'abcdef'
 
     panel = 0
-    for i, plot in enumerate(experiment_list):
+    for i, plot in enumerate(plot_list):
         print('Now plotting {}'.format(plot))
 
         handle_list = []
@@ -1493,22 +1493,22 @@ def main():
     #plot_fig4_global_change_multivar_factors_map()
     # #
     # # # FIGURE 5
-    plot_fig5_global_demand_supply_wsi_timeseries(fontsize=16) # Run on SPICE
-    plot_fig5_as_key_fig(fontsize=14)
+    #plot_fig5_global_demand_supply_wsi_timeseries(fontsize=16) # Run on SPICE
+    #plot_fig5_as_key_fig(fontsize=14)
     # #
     # # # FIGURE 6
-    plot_fig6_demand_supply_wsi_present_map(fontsize=14)
+    #plot_fig6_demand_supply_wsi_present_map(fontsize=14)
     #
     # # FIGURE 7
-    plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=14)
+    #plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=14)
 
     ## FIGURE 8 (and S4)
     #preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='fut')
-    plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13)
+    #plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13)
 
     ## FIGURE S4 - run here as same function as Fig 7 but hist period
     #preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='hist')
-    plot_fig8_wsi_factors_by_ar6_hbarplots(period='hist', fontsize=13)
+    #plot_fig8_wsi_factors_by_ar6_hbarplots(period='hist', fontsize=13)
 
     ## FIGURE 9
     #preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut') # creates csv
