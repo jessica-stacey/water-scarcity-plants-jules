@@ -448,7 +448,7 @@ def plot_fig4_global_change_multivar_factors_map():
                 # Plot legend on bottom row only
                 cbar_axes_loc = common.position_cbar_colno_dependant(len(var_list), col)
                 cbar_unit_title = common.get_unit_title(var)
-                common.add_cbar(fig, cf, cbar_unit_title, var=var, font_size=18, cbar_axes_loc=cbar_axes_loc)
+                common.add_cbar(fig, cf, cbar_unit_title, var=var, cbar_axes_loc=cbar_axes_loc)
 
     fname = 'fig4_map_mean_change_contr_factors.png'
     plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
@@ -507,7 +507,6 @@ def preprocess_fig5_global_demand_supply_wsi_timeseries():
 
         print('Processing WSI cube')
         monthly_wsi_cube = monthly_demand_cube / monthly_supply_cube
-        #monthly_wsi_cube = common.cap_wsi_cube_abv_20(monthly_wsi_cube, threshold=20) # only do this for mean
         ann_wsi_cube = monthly_wsi_cube.aggregated_by('year', iris.analysis.MEDIAN)
         global_ann_wsi_cube = ann_wsi_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEDIAN)
         cube_out_dict['wsi', experiment] = global_ann_wsi_cube
@@ -1228,7 +1227,7 @@ def preprocess_fig9_median_wsi_by_basin(plot_list):
     df_by_region = df_by_region.replace(np.nan, 0)
 
     for col in plot_list:
-        color_dict = common.get_basin_colour_dict(col, reldiff=True)
+        color_dict = common.get_basin_colour_dict(col, reldiff=True, seasonal_flag=False)
         new_var_name = 'color_{}'.format(col)
         df_by_region = df_by_region.assign(**{new_var_name: common.make_color_list_for_wsi(df_by_region, col, color_dict)})
 
@@ -1264,7 +1263,7 @@ def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
         handle_list = []
         panel += 1
         ax = fig.add_subplot(3, 2, panel)
-        color_dict = common.get_basin_colour_dict(plot, reldiff=True)
+        color_dict = common.get_basin_colour_dict(plot, reldiff=True, seasonal_flag=False)
 
         for j, (range_min, range_max) in enumerate(color_dict):
             color = color_dict[(range_min, range_max)]
@@ -1419,7 +1418,7 @@ def plot_fig10_wsi_anncycle_singlebasin(basin_id, basin_name, font_size=20):
     # Bottom panel: contr_factor subplot
     ax2 = fig.add_subplot(2, 1, 2)
     for contr_factor in ['CLIM: VEG', 'CO2: STOM', 'CO2: STOM+VEG', 'CO2: STOM & CLIM+CO2: VEG']:
-        color = common.get_contr_factor_color_dict_basins(contr_factor)
+        color = common.get_contr_factor_color_dict(contr_factor)
         plt.plot(df.index, df[contr_factor], label=contr_factor, color=color)
     ax2.set_ylabel('% diff.', fontsize=font_size)
     ax2.axhline(y=0, color='dimgray', linestyle='--')
@@ -1512,15 +1511,15 @@ def main():
 
     ## FIGURE 9
     #preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut') # creates csv
-    plot_fig9_wsi_maps_by_basin_reldiff(period='fut', fontsize=14)
+    #plot_fig9_wsi_maps_by_basin_reldiff(period='fut', fontsize=14)
 
     ## TABLE 2
-    table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False)
+    #table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False)
 
     ## FIGURE 10
     select_basins_dict = common.get_select_basins()
     for basin_id in select_basins_dict: #{294: 'Tigris-Euphrates'}:
-        plot_fig10_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17)
+       plot_fig10_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17)
     plot_fig10_basin_shapes(select_basins_dict) # map in the middle of Figure
 
     return

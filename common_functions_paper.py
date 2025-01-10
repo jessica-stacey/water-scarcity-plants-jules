@@ -4,41 +4,9 @@
 import iris
 import numpy as np
 
-#### Formatting functions ####
-
-def int_to_roman(num):
-    # Function to convert integer to Roman numerals
-    val = [
-        10, 9, 5, 4,
-        1
-        ]
-    syb = [
-        "X", "IX", "V", "IV",
-        "I"
-        ]
-    roman_num = ''
-    i = 0
-    while  num > 0:
-        for _ in range(num // val[i]):
-            roman_num += syb[i]
-            num -= val[i]
-        i += 1
-    return roman_num
-
-def load_co2_mmr():
-    rcp6_fname = '/data/users/jstacey/processed_jules_output/co2_rcp60.nc'
-    hist_fname = '/data/users/jstacey/processed_jules_output/co2_historical.nc'
-    rcp6_cube = iris.load_cube(rcp6_fname)
-    hist_cube = iris.load_cube(hist_fname)
-    hist_cube = hist_cube.extract(
-        iris.Constraint(time=lambda cell: 1900 <= cell.point <= 2005))  # to remove 2006 to avoid duplicates with RCP60
-
-    outcubelist = iris.cube.CubeList([hist_cube, rcp6_cube])
-    cube = outcubelist.concatenate_cube()
-
-    cube = convert_co2_mmr_to_ppm_cube(cube)
-
-    return cube
+###############################
+#### Formatting functions #####
+###############################
 
 def convert_co2_mmr_to_ppm_cube(cube):
     # convert to ppm
@@ -53,7 +21,27 @@ def convert_co2_mmr_to_ppm_cube(cube):
     cube.data = cube_data_ppm
     return cube
 
+def load_co2_mmr():
+    '''
+    Load and process the CO2 data from the processed JULES output files
+    Returns: Iris cube with CO2 data in ppm
+    '''
+    rcp6_fname = '/data/users/jstacey/processed_jules_output/co2_rcp60.nc'
+    hist_fname = '/data/users/jstacey/processed_jules_output/co2_historical.nc'
+    rcp6_cube = iris.load_cube(rcp6_fname)
+    hist_cube = iris.load_cube(hist_fname)
+    hist_cube = hist_cube.extract(
+        iris.Constraint(time=lambda cell: 1900 <= cell.point <= 2005))  # to remove 2006 to avoid duplicates with RCP60
+
+    outcubelist = iris.cube.CubeList([hist_cube, rcp6_cube])
+    cube = outcubelist.concatenate_cube()
+
+    cube = convert_co2_mmr_to_ppm_cube(cube)
+
+    return cube
+
 def get_var_title(var):
+    # Get nice variable title for plot labels
     var_title_dict = {'runoff': 'Total runoff',
                       'surf_roff': 'Surface runoff',
                       'sub_surf_roff': 'Sub-surface runoff',
@@ -77,6 +65,7 @@ def get_var_title(var):
     return var_title_dict[var]
 
 def get_unit_title(var):
+    # Get unit labels for plot titles
     var_title_dict = {'runoff': 'mm/day',
                       'surf_roff': 'mm/day',
                       'sub_surf_roff': 'mm/day', # not using as looks exactly same as runoff!
@@ -98,6 +87,7 @@ def get_unit_title(var):
 
 
 def get_experiment_label(experiment):
+    # Get experiment labels for plots
     experiment_dict = {'co2_triffid_fix': 'S1. CLIM: STOM',
             'co2_fix_noLUC': 'S2. CLIM: STOM+VEG',
             'triffid_fix': 'S3. CLIM+CO2: STOM',
@@ -106,15 +96,17 @@ def get_experiment_label(experiment):
     return experiment_dict[experiment]
 
 def get_contr_factor_label(factor):
+    # Get labels for isolated factors for timeseries plot legends
     factor_dict = {'CLIM': 'CLIM',
-                   'STOM': 'CO2: STOM',#  (E3-E1)/E1',
-                   'PLANT_PHYS': 'CO2: STOM+VEG',#  (E4-E2)/E2',
-                   'VEG_DIST': 'CLIM: VEG',#  (E2-E1)/E1',
-                   'PLANT_PHYS_VEG': 'CO2: STOM & CLIM+CO2: VEG'#'CLIM+CO2: STOM+VEG',#  (E4-E1)/E1'
+                   'STOM': 'CO2: STOM',
+                   'PLANT_PHYS': 'CO2: STOM+VEG',
+                   'VEG_DIST': 'CLIM: VEG',
+                   'PLANT_PHYS_VEG': 'CO2: STOM & CLIM+CO2: VEG'
                    }
     return factor_dict[factor]
 
 def get_contr_factor_label_maps(factor):
+    # Get labels for isolated factors for map plots - uses new lines to fit in plot
     factor_dict = {'CLIM': 'S1. CLIM:\nSTOM',
                    'co2_triffid_fix': 'S1. CLIM:\nSTOM',
                    'STOM': 'CO2: STOM',
@@ -126,8 +118,8 @@ def get_contr_factor_label_maps(factor):
                    }
     return factor_dict[factor]
 
-## Plot color dictionaries
 def get_experiment_color_dict(experiment):
+    # Get consistent color for each experiment
     color_dict = {'co2_triffid_fix': 'mediumblue',
                   'co2_fix_noLUC': 'purple',
                   'triffid_fix': 'dimgrey', #'purple',
@@ -135,23 +127,21 @@ def get_experiment_color_dict(experiment):
                   }
     return color_dict[experiment]
 def get_contr_factor_color_dict(contr_factor):
+    # Get consistent color for each contributing factor
     color_dict = {'VEG_DIST': 'forestgreen',
+                  'CLIM: VEG': 'forestgreen',
                   'PLANT_PHYS': 'maroon',
-                  'STOM': 'orangered',
-                  'PLANT_PHYS_VEG': 'red'
-                  }
-    return color_dict[contr_factor]
-
-
-def get_contr_factor_color_dict_basins(contr_factor):
-    color_dict = {'CLIM: VEG': 'seagreen',
                   'CO2: STOM+VEG': 'maroon',
+                  'STOM': 'orangered',
                   'CO2: STOM': 'orangered',
+                  'PLANT_PHYS_VEG': 'red',
                   'CO2: STOM & CLIM+CO2: VEG': 'red'
                   }
     return color_dict[contr_factor]
 
+
 def get_select_basins():
+    # List of basins and their PFAF IDs used in Figure 10
     return {127: 'Southern_Africa',
                           142: 'NW_Africa',
                           172: 'Nile',
@@ -165,41 +155,20 @@ def get_select_basins():
                           742: 'Mississippi',
                           }
 
-## Common functions
+#############################################
+## Common functions for masking Iris cubes #####
+#############################################
 
-def unify_cubes(cube_in, cube_format_to_copy):
-    # cubes must have data in same shape - set something up to chack for this
-    cube_in_data = cube_in.data
-    cube_out = cube_format_to_copy.copy()
-    cube_out.data = cube_in_data
-    return cube_out
+def mask_cube_by_ar6_region(cube, region):
+    '''
+    Mask iris cube by IPCC AR6 regions
+    Args:
+        cube: Iris cube to mask
+        region: IPCC AR6 region name
 
+    Returns: Iris cube now masked by the selected region
 
-def cap_wsi_cube_abv_20(cube, threshold):
-    import numpy as np
-    print('Capping all WSI values > 20 to 20 for each experiment and month')
-
-    num_values_above_threshold = np.sum(cube.data > threshold)
-    total_values = cube.data.size
-    percentage_changed = (num_values_above_threshold / total_values) * 100
-    print(f"Percentage of values that were changed: {percentage_changed:.2f}%")
-
-    num_values_above_threshold = np.sum(cube.data < 0)
-    percentage_changed_0 = (num_values_above_threshold / total_values) * 100
-    print(f"Number of negative values: {num_values_above_threshold:.2f} {percentage_changed_0:.2f}%")
-
-    data = cube.data
-    cube.data = np.clip(data, 0, threshold)  # puts cap on data
-
-    num_values_above_threshold = np.sum(cube.data >= threshold)
-    percentage_changed_after = (num_values_above_threshold / total_values) * 100
-
-    if percentage_changed_after != percentage_changed:
-        raise ValueError("The percentages before ({}) and after ({}) capping the cube data are not the same.".format(percentage_changed, percentage_changed_after))
-
-    return cube
-
-def mask_cube_by_ar6_region(cube, region, quickplot=False):
+    '''
     import regionmask
     import numpy as np
 
@@ -222,11 +191,19 @@ def mask_cube_by_ar6_region(cube, region, quickplot=False):
     masked_data = np.ma.masked_where(~broadcasted_mask, cube.data)
     masked_cube = cube.copy()
     masked_cube.data = masked_data
-    # if region.number == 0 and quickplot:
-    #    qplt.pcolormesh(masked_cube[0])
+
     return masked_cube
 
 def apply_basin_mask_to_cube(cube, PFAF_ID):
+    '''
+    Mask cube by basin using PFAF_ID
+    Args:
+        cube: Iris cube to mask
+        PFAF_ID: Hydrobasin unique PFAF ID as integer
+
+    Returns: Iris cube now masked by the selected basin
+
+    '''
     import regionmask
     import geopandas as gpd
     import numpy as np
@@ -261,23 +238,17 @@ def apply_basin_mask_to_cube(cube, PFAF_ID):
 
 #### Functions for calculating contributing factors
 
-def calc_factor_inf_df_with_wsi_colname(df, percent_diff=True):
-    diff_dict = {'CO2: STOM': ['co2_triffid_fix', 'triffid_fix'],
-             'CLIM: VEG': ['co2_triffid_fix', 'co2_fix_noLUC'],
-             'CO2: STOM+VEG': ['co2_fix_noLUC', 'all_noLUC'],
-             'CO2: STOM & CLIM+CO2: VEG': ['co2_triffid_fix', 'all_noLUC']}
-
-    for factor in diff_dict:
-        col_name_0 = 'WSI_mean_{}'.format(diff_dict[factor][0])
-        col_name_1 = 'WSI_mean_{}'.format(diff_dict[factor][1])
-
-        diff = df[col_name_1] - df[col_name_0]
-        if percent_diff:
-            diff = (diff/df[col_name_0])*100
-        df[factor] = diff
-    return df
-
 def calc_factor_inf_df(df, percent_diff=False):
+    '''
+    Calculate the contribution of each factor to the total change in WSI using Pandas dataframes,
+    by taking difference between simulations
+    Args:
+        df: Pandas dataframe with columns for each factor
+        percent_diff: For output in percentage change
+
+    Returns: Pandas dataframe with additional columns for each factor
+
+    '''
     diff_dict = {'CO2: STOM': ['co2_triffid_fix', 'triffid_fix'],
              'CLIM: VEG': ['co2_triffid_fix', 'co2_fix_noLUC'],
              'CO2: STOM+VEG': ['co2_fix_noLUC', 'all_noLUC'],
@@ -294,6 +265,17 @@ def calc_factor_inf_df(df, percent_diff=False):
     return df
 
 def calc_contr_factors_timeseries(cube_dict, var_list, calc_rel_diff=False):
+    '''
+    Calculate the contribution of each factor to the total change in WSI using Iris cubes,
+    by taking difference between simulations
+    Args:
+        cube_dict: dictionary of Iris cubes for each variable and simulation e.g., dict_name[var_name, simulation_name]
+        var_list: list of variables to calculate contributing factors for
+        calc_rel_diff: To output the % differnce between the simulations
+
+    Returns: Dictionary of Iris cubes for each variable and contributing factor
+
+    '''
     from iris.analysis import maths as ia_maths
 
     abs_diff_dict = {}
@@ -329,6 +311,17 @@ def calc_contr_factors_timeseries(cube_dict, var_list, calc_rel_diff=False):
         return abs_diff_dict
 
 def calc_contr_factors_map(cube_dict, var_list, rel_diff=False):
+    '''
+    Calculate the contribution of each factor to the total change in WSI using Iris cubes,
+    by taking difference between simulations
+    Args:
+        cube_dict: dictionary of Iris cubes for each variable and simulation e.g., dict_name[var_name, simulation_name]
+        var_list: list of variables to calculate contributing factors for
+        rel_diff: To output the % differnce between the simulations
+
+    Returns: Dictionary of Iris cubes for each variable and contributing factor
+
+    '''
     from iris import analysis as ia
     from iris.analysis import maths as ia_maths
 
@@ -352,131 +345,39 @@ def calc_contr_factors_map(cube_dict, var_list, rel_diff=False):
 
     return diff_dict
 
-# Preprocessing fucntions
-def set_up_comparable_cubes(cube_in, use_time_format_from_cube):
-    import iris
-    for vrb in ['time', 'latitude', 'longitude']:
-        if cube_in.coord(vrb).has_bounds() == False:
-            cube_in.coord(vrb).guess_bounds()
+#########################
+### Plot formatting #####
+#########################
 
-    time_coord = use_time_format_from_cube.coord('time')
-    # time_coord.units = cf_units.Unit(time_coord.units.origin, calendar="gregorian")
-
-    coord_list = [(time_coord, 0),
-                  (cube_in.coord('latitude'), 1),
-                  (cube_in.coord('longitude'), 2)]
-
-    # Set up new cube inserting each coord
-    cube_out = iris.cube.Cube(cube_in.data,
-                              standard_name=cube_in.standard_name,
-                              long_name=cube_in.long_name,
-                              units=cube_in.units,
-                              dim_coords_and_dims=coord_list)
-    return cube_out
-
-def mask_non_water_scarce_regions(wsi_cube, cube_to_mask, mask_min_value, mask_max_value):
-    import numpy as np
-    import numpy.ma as ma
-
-    wsi_cube_data = wsi_cube.data
-
-    mask1 = wsi_cube_data > mask_min_value
-    mask2 = wsi_cube_data < mask_max_value
-    mask3 = np.logical_and(mask1, mask2)
-
-    mask = ma.masked_where(mask3, wsi_cube_data)
-    cube_to_mask.data = np.ma.masked_where(np.ma.getmask(mask), cube_to_mask.data)
-    return cube_to_mask
-
-def agg_funcs(var):
-    import iris
-    agg_dict = {'supply': iris.analysis.SUM,
-                'demand': iris.analysis.SUM,
-                'WSI': iris.analysis.MEDIAN
-                }
-    return agg_dict[var]
-
-def convert_cube_units(cube, cube_units_out):
-    import iris
-    if (cube.units == 'mm/day' and cube_units_out == 'm**3/day'):
-        print('Converting cube units: mm/day -> m3/day')
-        wghts = iris.analysis.cartography.area_weights(cube, normalize=False)  # in m**2
-        wghts_cube = cube.copy(data=wghts)
-        wghts_cube.units = "m**2"
-        cube = cube * wghts_cube  # units are now a fraction of m**3.s**-1
-        cube.convert_units("m**3/day")
-    return cube
-
-def calc_WSI_timeseries(supply_dict, demand_cube, experiment_list, spatial_agg=None, rolling_mean_years=None):
-    import iris
-    temp_dict = {}
-    wsi_dict = {}
-    for plot in ['demand', 'supply', 'WSI']:
-        for experiment in experiment_list:
-            print('processing cube for {}'.format(plot))
-            if plot == 'supply':
-                cube = supply_dict[experiment]
-            elif plot == 'demand':
-                cube = demand_cube
-
-            if plot in ['supply', 'demand']:
-                temp_dict[plot, experiment] = cube
-            elif plot == 'WSI': # calculate annual mean WSI
-                wsi_cube = temp_dict['demand', experiment] / temp_dict['supply', experiment]
-                wsi_cube = wsi_cube.aggregated_by('year', iris.analysis.MEAN) # added as now calculating WSI each month
-                if spatial_agg == 'median':
-                    wsi_cube = wsi_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEDIAN)
-                elif spatial_agg == 'mean':
-                    wsi_cube = wsi_cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN,
-                                                  weights=iris.analysis.cartography.area_weights(wsi_cube))
-                else:
-                    'No spatial aggregation applied'
-                if rolling_mean_years is not None:
-                    wsi_cube = wsi_cube.rolling_window('year', iris.analysis.MEAN, rolling_mean_years)
-
-                wsi_dict['wsi', experiment] = wsi_cube
-            else:
-                print('No spatial averaging selected')
-
-    return wsi_dict
-
-def calc_wsi_mean_by_ar6_region(df, exp_list, inc_factors=False):
-    col_list = []
-
-    for exp in exp_list:
-        col_list.append('WSI_mean_{}'.format(exp))
-    if inc_factors:
-        for factor in ['CO2: STOM', 'CLIM: VEG', 'CO2: STOM+VEG', 'CLIM: VEG + CO2: STOM+VEG']:
-            col_list.append('{}'.format(factor))
-
-    mm_region = df.groupby(['region_name'], sort=True)[col_list].mean()
-    return mm_region
-'''
-def calc_wsi_mean_by_ar6_region_from_supply_demand(df, exp_list, inc_factors=False):
-    col_list = []
-
-    for exp in exp_list:
-        col_list.append('supply_mean_{}'.format(exp))
-
-    col_list.append('demand_mean_all_noLUC')
-
-    ann_mean = df.groupby(['year'], sort=True)[col_list].mean()
-
-    # Calc WSI
-    # Not sure whats happened here - I think got deleted, see one above?!
-
-    return mm_region
-'''
-
-### Plot formatting
 def position_cbar_colno_dependant(n, col_no):
+    '''
+    Position the colorbar based on the number of columns in the plot - used for Fig. 4
+    Args:
+        n: total number of columns
+        col_no: column number
+
+    Returns: Loction for cbar
+
+    '''
     left_col = 0.1
     gap = 0.01 # was 0.2
     width = (1 - left_col - 8*gap)/n
     cbar_loc = [left_col + (col_no*width) + ((col_no*2+1) * gap), 0.05, width, 0.02]
     return cbar_loc
 
-def add_cbar(fig, mappable, cbar_title, var, font_size=None, cbar_axes_loc=None):
+def add_cbar(fig, mappable, cbar_title, var, cbar_axes_loc=None):
+    '''
+    Add colorbar to plot - used in Fig. 4
+    Args:
+        fig: matplotlib figure
+        mappable: your plot
+        cbar_title: title for colorbar
+        var: variable string
+        cbar_axes_loc: list, axes location for colorbar
+
+    Returns: colorbar
+
+    '''
     import matplotlib.pyplot as plt
 
     if cbar_axes_loc is not None:
@@ -484,156 +385,28 @@ def add_cbar(fig, mappable, cbar_title, var, font_size=None, cbar_axes_loc=None)
     else:
         cbar_axes = fig.add_axes([0.2, 0.15, 0.6, 0.05]) # left, bottom, width, height
     cbar = plt.colorbar(mappable, cbar_axes, orientation='horizontal')
-    if font_size is None:
-        font_size = 18
-    cbar.set_label('{}'.format(cbar_title), fontsize=font_size)
-    cbar.ax.tick_params(labelsize=font_size)
+    cbar.set_label('{}'.format(cbar_title), fontsize=18)
+    cbar.ax.tick_params(labelsize=18)
     if var == 'gs':
         cbar.set_ticks([-0.002, -0.001, 0, 0.001, 0.002])
         cbar.set_ticklabels([-0.002, -0.001, 0, 0.001, 0.002])
     return cbar
 
-def contourf_shift(levels, data=None, extend='neither'):
-    """
-    Shift the contour levels or the data to be plotted by a small amount.
-    This small amount is determined by the mean difference between levels.
+#########################
+##### For basin plots ###
+#########################
 
-    We do not shift the first level, which ensures the full data range is
-    still covered by the levels, e.g. making sure data values of 0 are
-    covered when original minimum level is 0.
+def get_basin_colour_dict(col, reldiff=False, seasonal_flag=False):
+    '''
+    Get color dictionary for basin plots
+    Args:
+        col: Name of simulation or isolated factor
+        reldiff: % difference flag
+        seasonal_flag: for seasonal Fig. S6
 
-    If data is provided then we return shifted data instead of shifted
-    levels.
+    Returns: Dictionary of color ranges with value range and colour
 
-    :arg list levels:     List of the contour levels.
-    :arg np.ndarray data: Optionally choose to shift the data to be plotted.
-    :arg string extend:   Used when shifting data to decide whether to fix
-                          the max.
-
-    :returns:             Shifted levels list or data array.
-    :rtype:               levels or np.ndarray.
-
-    """
-    import numpy as np
-
-    if isinstance(levels, str):
-        raise ValueError('levels should be a list.')
-    else:
-        try:
-            iter(levels)
-        except TypeError:
-            print('levels should be a list.')
-    if data is not None and type(data) not in [
-            np.ndarray, np.ma.core.MaskedArray]:
-        print('data should be a numpy array.')
-
-    diff_list = [
-        levels[lev] - levels[lev - 1] for lev in range(1, len(levels))]
-    shift_value = 0.0001 * np.mean(diff_list)
-    if data is not None:
-        data += shift_value
-        # If we are looking at probabilities (where the color bar does not
-        # extend past 0 or 100) we do not want any values greater than 100%.
-        if extend in ['neither', 'min']:
-            max_level = levels[-1]
-            data[np.where(data > max_level)] = max_level
-        return data
-    else:
-        shifted_levels = [levels[0], ]
-        shifted_levels.extend([level + shift_value for level in levels[1:]])
-        return shifted_levels
-
-def _contourf_with_retry(cube, levels=None, cmap=None, colors=None, extend='neither',
-                         axes=None):
-    """
-    There is a small chance that iplt.contourf will fail with
-    'shapely.geos.TopologicalError', 'ValueError' or 'AttributeError'.
-    Get the mean difference between the contour levels so we can pick a
-    relatively 'small' value to shift the data by, then try again!
-    (For details of this fix see:
-    https://code.metoffice.gov.uk/trac/glosea/wiki/GS_PP/ContourPlotFix)
-
-    At cartopy 0.16 a fix was introduced to handle this problem, but appears
-    to have introduced a new bug which is less easy to capture. We shift the
-    levels to avoid hitting this bug.
-
-    :arg iris.cube.Cube cube: Merged cube containing data for iplt.contourf.
-    :arg list levels:         List of the contour levels.
-    :arg list colors:         List of contour line colours.
-    :arg string extend:       Used when shifting data to decide whether to fix
-                              the max.
-    :arg plt.subplot axes:    Axis to use for this map.
-
-    :returns:                 Plot with contour lines on figure
-    :rtype:                   iris.plot
-
-    """
-    import shapely
-    import iris.plot as iplt
-
-    levels = contourf_shift(levels)
-    try:
-        im = iplt.contourf(
-            cube, levels=levels, cmap=cmap, extend=extend, axes=axes)
-    except (shapely.geos.TopologicalError, ValueError, AttributeError) as err:
-        cube.data = contourf_shift(levels, data=cube.data, extend=extend)
-        plt.cla()
-        im = iplt.contourf(
-            cube, levels=levels, cmap=cmap, extend=extend)
-    return im
-
-# Producing dataframes for later
-def calc_median_wsi_by_ar6_region():
-    import iris
-    from iris import coord_categorisation
-    import regionmask
-    import common_functions_paper as common
-    import pandas as pd
-
-    demand_fname = '/data/users/jstacey/water_demand/ISIMIP2/demand_HADGEM2-ES_H08_ssp2_2006-2099_monthly.nc'
-    monthly_demand_cube = iris.load_cube(demand_fname)
-    iris.coord_categorisation.add_year(monthly_demand_cube, 'time')
-    monthly_demand_cube = monthly_demand_cube.extract(iris.Constraint(year=lambda cell: 2076 <= cell.point <= 2095))
-
-    ar6_land_regions = regionmask.defined_regions.ar6.land
-
-    # # To test with one region
-    # region_number = ar6_land_regions.abbrevs.index('EAS')
-    # filtered_region = ar6_land_regions[region_number]
-
-    wsi_median_dict = {}
-
-    for experiment in ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']:
-        print('Calcualting wsi for {}'.format(experiment))
-        supply_fname = '/data/users/jstacey/water_demand/ISIMIP2/supply_HADGEM2-ES_{}_2006-2099_runoff_monthly.nc'.format(
-            experiment)
-        monthly_supply_cube = iris.load_cube(supply_fname)
-        iris.coord_categorisation.add_year(monthly_supply_cube, 'time')
-        monthly_supply_cube = monthly_supply_cube.extract(iris.Constraint(year=lambda cell: 2076 <= cell.point <= 2095))
-        monthly_wsi_cube = monthly_demand_cube / monthly_supply_cube
-
-        for region in ar6_land_regions:
-            cube_region = common.mask_cube_by_ar6_region(monthly_wsi_cube, region=region)
-            cube_region_median = cube_region.collapsed(['latitude', 'longitude', 'time'], iris.analysis.MEDIAN)
-            wsi_median_dict[experiment, region.name] = cube_region_median.data
-
-    df = pd.DataFrame(list(wsi_median_dict.items()), columns=['keys', 'WSI Median'])
-
-    # Split the 'keys' column into separate columns
-    df[['Experiment', 'Region']] = pd.DataFrame(df['keys'].tolist(), index=df.index)
-    df.drop(columns=['keys'], inplace=True)
-    df = df.pivot(index='Region', columns='Experiment', values='WSI Median')
-
-    df = calc_factor_inf_df_monthly(df)
-
-    # Save the DataFrame to a CSV
-    df.to_csv('/home/h06/jstacey/MSc/csv_files/wsi_monthly_gp_median_with_inf_factors_fut.csv', index=False)
-    print('Dataframe saved to /home/h06/jstacey/MSc/csv_files/wsi_median.csv')
-    return df
-
-# For basin plots
-
-def get_basin_colour_dict(col, reldiff=False):
+    '''
     if col in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC', 'CLIM', 'ALL']:
         print('Finding   color for {}'.format(col))
         color_dict = {(5, 10000000000): 'dimgrey',
@@ -645,21 +418,8 @@ def get_basin_colour_dict(col, reldiff=False):
                       (0.05, 0.1): 'peachpuff',
                       (0, 0.05): 'white',
                       }
-    elif reldiff == False:
-        color_dict = {(1, 2): 'darkred',
-                      (0.5, 1): 'saddlebrown',
-                      (0.2, 0.5): 'red',
-                      (0.1, 0.2): 'lightsalmon',
-                      (0.05, 0.1): 'peachpuff',
-                      (-0.05, 0.05): 'white',
-                      (-0.1, -0.05): 'paleturquoise',
-                      (-0.2, -0.1): 'darkturquoise',
-                      (-0.5, -0.2): 'teal',
-                      (-1, -0.5): 'darkslategray',
-                      (-12, -1): 'midnightblue',
-                      }
 
-    else:  # for reldiff contr factor changes - change 100s back to 60 for ann
+    elif reldiff and seasonal_flag==False:  # for reldiff contr factor changes - change 100s back to 60 for ann
         color_dict = {(40, 60): 'darkred',
                       (30, 40): 'saddlebrown',
                       (20, 30): 'red',
@@ -672,19 +432,42 @@ def get_basin_colour_dict(col, reldiff=False):
                       (-40, -30): 'darkslategray',
                       (-70, -40): 'midnightblue',
                       }
+    elif reldiff and seasonal_flag: # For Fig. S6
+        color_dict = {(40, 100): 'darkred',
+                      (30, 40): 'saddlebrown',
+                      (20, 30): 'red',
+                      (10, 20): 'lightsalmon',
+                      (5, 10): 'peachpuff',
+                      (-5, 5): 'white',
+                      (-10, -5): 'paleturquoise',
+                      (-20, -10): 'darkturquoise',
+                      (-30, -20): 'teal',
+                      (-40, -30): 'darkslategray',
+                      (-90, -40): 'midnightblue',
+                      }
 
     return color_dict
 
 
-def make_color_list_for_wsi(df, exp, color_dict):
+def make_color_list_for_wsi(df, col, color_dict):
+    '''
+    Make a list of colors representing each value in the dataframe columnn used for basin plots
+    Args:
+        df: Pandas dataframe chich includes a column with name col
+        col: Column name to get colors for
+        color_dict: dictionary of value ranges and colours assigned in get_basin_colour_dict() above
+
+    Returns: Luist of colours  to assign to new column in df
+
+    '''
     from matplotlib import pyplot as plt
 
     color_li = []
 
-    print('{} has max {}'.format(exp, df[exp].max()))
-    print('{} has min {}'.format(exp, df[exp].min()))
+    print('{} has max {}'.format(col, df[col].max()))
+    print('{} has min {}'.format(col, df[col].min()))
 
-    for val in df[exp]:
+    for val in df[col]:
         for (range_min, range_max) in color_dict:
             color = color_dict[(range_min, range_max)]
             if range_min == range_max:  # when looking for value that matches number exactly e.g. 0
@@ -693,7 +476,7 @@ def make_color_list_for_wsi(df, exp, color_dict):
             elif val >= range_min and val < range_max:
                 color_li.append(color)
 
-    if len(color_li) != len(df[exp]):
+    if len(color_li) != len(df[col]):
         fig, ax = plt.subplots(figsize=(20, 15))
         plt.hist(color_li)
         plt.savefig('/home/h06/jstacey/MSc/logs/color_hist.png', dpi=100, bbox_inches='tight', facecolor='white')
@@ -703,6 +486,15 @@ def make_color_list_for_wsi(df, exp, color_dict):
     return color_li
 
 def get_basin_colour_dict_month_count(col, reldiff=False):
+    '''
+    Get color dictionary for basin plots for month count Fog. S5
+    Args:
+        col: simulation or isolated factor name
+        reldiff: True for % difference
+
+    Returns: Dictionary of color ranges with value range and colour
+
+    '''
     if col in ['co2_triffid_fix', 'all_noLUC']:
         color_dict = {(10, 13): 'dimgrey',
                      (8, 10): 'darkred',
@@ -714,7 +506,7 @@ def get_basin_colour_dict_month_count(col, reldiff=False):
                      (0, 1): 'white',
                      }
     else:
-        color_dict = {   (2, 3): 'saddlebrown',
+        color_dict = {(2, 3): 'saddlebrown',
                          (1, 2): 'red',
                          (0.5, 1): 'lightsalmon',
                          (-0.5, 0.5): 'white',
@@ -727,165 +519,17 @@ def get_basin_colour_dict_month_count(col, reldiff=False):
 
     return color_dict
 
-def mask_cube_by_basin(gdf, cube, PFAF_ID):
-    import iris
-    import geopandas as gpd
-    import numpy as np
-    import regionmask
-    import numpy.ma as ma
-
-    print('Masking cube by basin {}'.format(PFAF_ID))
-
-    # To check its actually masking
-    num_non_masked_points = ma.count(cube.data)
-    print(f"Total number of non-masked grid points: {num_non_masked_points}")
-
-    basin_geometry = gdf[gdf['PFAF_ID'] == PFAF_ID].geometry
-    if len(basin_geometry) != 1:
-        basin_geometry = basin_geometry.tolist()
-    basin_mask = regionmask.Regions(basin_geometry)
-
-    lon = cube.coord('longitude').points
-    lat = cube.coord('latitude').points
-    # Rasterises the regions to the lon, lat grid
-    mask = basin_mask.mask(lon, lat)
-    mask_cube = mask.to_iris()
-    # Broadcast the mask to the shape of the input cube
-    mask_array = np.broadcast_to(mask_cube.data, cube.shape)
-    mask_array = ma.masked_invalid(mask_array)
-    cube.data.mask = mask_array.mask
-
-    num_non_masked_points = ma.count(cube.data)
-    print(f"Total number of non-masked grid points after masking: {num_non_masked_points}")
-
-    return cube
-
-def get_riverbasin_PFAF_list():
-    import geopandas as gpd
-    basin_shpfile = '/data/users/jstacey/hydrobasins/BasinATLAS_v10_shp/BasinATLAS_v10_lev03.shp'
-    df = gpd.read_file(basin_shpfile)
-    return df['PFAF_ID'].to_list()
-
-def apply_basin_mask_to_cube(cube, PFAF_ID):
-    import regionmask
-    import geopandas as gpd
-    import numpy.ma as ma
-
-    # read in shape file and select single basin
-    print('Masking cube for PFAF_ID {}'.format(PFAF_ID))
-    shpfile = '/data/users/jstacey/hydrobasins/BasinATLAS_v10_shp/BasinATLAS_v10_lev03.shp'
-    basins = gpd.read_file(shpfile)
-    basin = basins[basins['PFAF_ID'] == PFAF_ID]
-
-    # get mask
-    basins_regions = regionmask.Regions(basin.geometry)
-
-    lon = cube.coord('longitude').points
-    lat = cube.coord('latitude').points
-
-    # Rasterises the regions to the lon, lat grid
-    mask = basins_regions.mask(lon, lat)
-    mask_cube = mask.to_iris()
-
-    # Broadcast the mask to the shape of the input cube
-    mask_array = np.broadcast_to(mask_cube.data, cube.shape)
-    mask_array = ma.masked_invalid(mask_array)
-
-    # apply numpy mask to new cube
-    masked_cube_data = np.ma.masked_where(mask_array, cube.data)
-    cube_basin = cube.copy()
-    cube_basin.data = masked_cube_data
-
-
-    return cube_basin
-
-def get_pop_by_basin(yr_range, print_total=False):
-    import iris
-    import cf_units
-    import pandas as pd
-    from iris import coord_categorisation
-
-    # load data
-    fpath = '/data/users/jstacey/population_data/population_ssp2soc_0p5deg_annual_2006-2100.nc4'
-    cube = iris.load_cube(fpath)
-
-    # convert time units
-    cube.coord("time").bounds = None
-    tcoord = cube.coord("time")
-    tcoord.units = cf_units.Unit(tcoord.units.origin, calendar="gregorian")
-    tcoord.convert_units("days since 1661-01-01 00:00:00")
-
-    # Replace the time coordinate with the corrected one
-    cube.remove_coord("time")
-    cube.add_dim_coord(tcoord, 0)
-
-    iris.coord_categorisation.add_year(cube, 'time')
-    cube = cube.extract(iris.Constraint(year=lambda cell: yr_range[0] <= cell.point <= yr_range[1]))
-    cube = cube.collapsed('time', iris.analysis.MEAN)
-    cube.coord('latitude').guess_bounds()
-    cube.coord('longitude').guess_bounds()
-
-    if print_total:
-        # to get total global population to test river basin pop sums up to this
-        total_pop = cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
-        print('TOTAL POP IS... {}'.format(total_pop.data))
-
-    # Get list of all riverbasin IDs
-    rb_list = get_riverbasin_PFAF_list()
-    #rb_list = rb_list[0:1] #for testing
-
-    # Create list of population total by basin averaged over the period
-    pop_list = []
-    for basin in rb_list:
-        cube_basin = apply_basin_mask_to_cube(cube, basin)
-        cube_basin = cube_basin.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
-        print('Pop count for basin {} is {}'.format(basin, cube_basin.data))
-        pop_list.append(cube_basin.data.item())
-
-    # make dataframe
-    df = pd.DataFrame()
-    df['PFAF_ID'] = rb_list
-    #df = df.head(10)  # for testing
-    df['pop_count'] = pop_list
-
-    fname = 'table2_df_pop_by_basin-{}-{}.csv'.format(yr_range[0], yr_range[1])
-    df.to_csv('/home/h06/jstacey/MSc/csv_files/{}'.format(fname))
-    print('/home/h06/jstacey/MSc/csv_files/{} saved'.format(fname))
-
-    return df
-
-def calc_tot_pop():
-    import pandas as pd
-    import iris
-    from iris import coord_categorisation
-    import cf_units
-
-    fpath = '/data/users/jstacey/population_data/population_ssp2soc_0p5deg_annual_2006-2100.nc4'
-    cube = iris.load_cube(fpath)
-    # convert time units
-    cube.coord("time").bounds = None
-    tcoord = cube.coord("time")
-    tcoord.units = cf_units.Unit(tcoord.units.origin, calendar="gregorian")
-    tcoord.convert_units("days since 1661-01-01 00:00:00")
-
-    # Replace the time coordinate with the corrected one
-    cube.remove_coord("time")
-    cube.add_dim_coord(tcoord, 0)
-    # to get total global population to test river basin pop sums up to this
-    iris.coord_categorisation.add_year(cube, 'time')
-    cube = cube.extract(
-        iris.Constraint(year=lambda cell: 2076 <= cell.point <= 2095))
-    cube = cube.collapsed('time', iris.analysis.MEAN)
-    cube.coord('latitude').guess_bounds()
-    cube.coord('longitude').guess_bounds()
-    total_pop_cube = cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
-
-    df = pd.read_csv('/home/h06/jstacey/MSc/csv_files/table2_df_pop_by_basin-2076-2095.csv')
-    total_pop_df = df['pop_count'].sum(skipna=True)
-    print('TOTAL POP IS... {} from cube, {} from river basin df, diff is {}'.format(total_pop_cube.data, total_pop_df, total_pop_cube.data - total_pop_df))
-    return total_pop_cube.data
 
 def get_fut_pop_count_by_basin(PFAF_ID, in_millions=False):
+    '''
+    Get future population count by basin
+    Args:
+        PFAF_ID: Unique hydrobasin ID
+        in_millions: True for value in millions
+
+    Returns: Float, population count for that basin
+
+    '''
     import pandas as pd
 
     # To load pop_df from csv
@@ -901,6 +545,14 @@ def get_fut_pop_count_by_basin(PFAF_ID, in_millions=False):
     return pop_count
 
 def sum_pop_in_multiple_basins(basin_list):
+    '''
+    Sum population in multiple basins
+    Args:
+        basin_list: list of PFAF_IDs
+
+    Returns: float, total population count
+
+    '''
     total_pop = 0
     for id in basin_list:
         pop_count = get_fut_pop_count_by_basin(id, in_millions=False)
@@ -908,6 +560,18 @@ def sum_pop_in_multiple_basins(basin_list):
     return total_pop
 
 def calc_basins_incr_decr(df, factor, threshold, table_dict):
+    '''
+    Calculate the number of basins and population count in basins which have increased or decreased by a certain threshold
+    used for Table 2
+    Args:
+        df: Pandas Dataframe which has column name same asa 'factor'
+        factor: str, column name - simualtion or isolated factor
+        threshold: float, threshold in which to calculate increase or decrease
+        table_dict: dictionary of table 2 - defined in table2_output_basins_pop_incr_decr_to_csv()
+
+    Returns: table_dict with updated values
+
+    '''
     df_threshold_pos = df[(df[factor] > threshold)]
     df_threshold_neg = df[(df[factor] < -threshold)]
 

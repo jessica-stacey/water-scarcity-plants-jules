@@ -1,19 +1,23 @@
+# Main file for processing and plotting paper supplementary information figures
+# Jessica Stacey
 import iris
 import iris.plot as iplt
 import numpy as np
 import matplotlib.pyplot as plt
 import common_functions_paper as common
 
-plt.rcParams['font.family'] = 'Arial'
-
-
 def plot_figS1_pop_data_map(yr_range, fontsize=12):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import iris.plot as iplt
+    '''
+    Plot population data for a given year range
+    Args:
+        yr_range: list, e.g., [start_year, end_year]
+        fontsize: int
 
-    import iris
-    import common_functions as common
+    Returns: Saves plot to .png file
+
+    '''
+
+    from iris import coord_categorisation
     import cf_units
 
     # load data
@@ -31,7 +35,7 @@ def plot_figS1_pop_data_map(yr_range, fontsize=12):
     cube.add_dim_coord(tcoord, 0)
 
     iris.coord_categorisation.add_year(cube, 'time')
-    cube = common.extract_years(cube, yr_range)
+    cube = cube.extract(iris.Constraint(year=lambda cell: yr_range[0] <= cell.point <= yr_range[1]))
     cube = cube.collapsed('time', iris.analysis.MEAN)
     cube.coord('latitude').guess_bounds()
     cube.coord('longitude').guess_bounds()
@@ -60,7 +64,7 @@ def plot_figS1_pop_data_map(yr_range, fontsize=12):
 
 def preprocess_figS4a_calc_month_count_wsi_by_ar6_region_to_csv(period='fut', threshold = 0.4):
     '''
-    Figure S5a (spin off from Fig 7)
+    Figure S4a (spin off from Fig 7)
     Preprocess data
     Uses regional demand / regional supply
 
@@ -144,12 +148,14 @@ def preprocess_figS4a_calc_month_count_wsi_by_ar6_region_to_csv(period='fut', th
 
 def plot_figS4a_wsi_month_count_factors_by_ar6_hbarplots(period='fut', filter=False, fontsize=13, threshold=0.4):
     '''
-    Figure S5a (spin off from Fig 7)
+    Figure S4a (spin off from Fig 7)
     Preprocess horizontal bar plots of number of months in severe water scarcity (WSI > 0.4) for each AR6 region for
-    simulations S1 & S3 (left plot) and contributing factors (right plot)
+    simulations S1 & S4 (left plot) and contributing factors (right plot)
 
     Args:
         period: 'hist' (for 2006 - 2025) or 'fut' (for 2076 - 2095)
+        filter: bool - whether to filter out the top 25 regions with highest values
+        fontsize: int - size of font for labels and ticks
         threshold: int - WSI threshold for severe water scarcity
 
     Returns: Saves plot to .png file
@@ -230,12 +236,12 @@ def plot_figS4a_wsi_month_count_factors_by_ar6_hbarplots(period='fut', filter=Fa
 
 def preprocess_figS4b_calc_percent_area_wsi_by_ar6_region_to_csv(period='fut', threshold=0.4):
     '''
-    Figure S5b (spin off from Fig 7)
-    Preprocess data
+    Figure S4b (spin off from Fig 7)
+    Preprocess data for calculting % ares of region in water scarcity
 
     Args:
         period: 'hist' (for 2006 - 2025) or 'fut' (for 2076 - 2095)
-        threshold: int - WSI threshold for severe water scarcity
+        threshold: int - WSI threshold for severe water scarcity, usually 0.4
 
     Returns: Saves dataframe as .csv
 
@@ -309,9 +315,9 @@ def preprocess_figS4b_calc_percent_area_wsi_by_ar6_region_to_csv(period='fut', t
 
 def plot_figS4b_wsi_percent_area_by_ar6_hbarplots(period='fut', filter=False, fontsize=13, threshold=0.4):
     '''
-    Figure S5a (spin off from Fig 7)
-    Preprocess horizontal bar plots of number of months in severe water scarcity (WSI > 0.4) for each AR6 region for
-    simulations S1 & S3 (left plot) and contributing factors (right plot)
+    Figure S4b (spin off from Fig 7)
+    Preprocess horizontal bar plots of % area in severe water scarcity (WSI > 0.4) for each AR6 region for
+    simulations S1 & S4 (left plot) and contributing factors (right plot)
 
     Args:
         period: 'hist' (for 2006 - 2025) or 'fut' (for 2076 - 2095)
@@ -390,6 +396,14 @@ def plot_figS4b_wsi_percent_area_by_ar6_hbarplots(period='fut', filter=False, fo
 
 
 def preprocess_figS5_wsi_month_count_by_basin(plot_list):
+    '''
+    Preprocess data for plotting WSI by basin for each month
+    Args:
+        plot_list: list of strings - names of columns to plot
+
+    Returns: dataframe with colour columns for each plot_list
+
+    '''
     import pandas as pd
     import geopandas as gpd
     import numpy as np
@@ -418,7 +432,7 @@ def preprocess_figS5_wsi_month_count_by_basin(plot_list):
     exp_list = ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']
 
     threshold = 0.4
-    df_WScount = df.groupby('PFAF_ID')[exp_list].apply(lambda x: (x > threshold).sum())
+    df_WScount = df.groupby('PFAF_ID')[exp_list].apply(lambda x: (x >= threshold).sum())
     df_WScount = df_WScount / 20
 
     df_by_region = basins_df.merge(df_WScount, on='PFAF_ID', how='right')
@@ -434,6 +448,15 @@ def preprocess_figS5_wsi_month_count_by_basin(plot_list):
 
 
 def plot_figS5_wsi_month_count_maps_by_basin(period='fut', fontsize=12):
+    '''
+    Plot WSI by basin for each month on map
+    Args:
+        period: 'hist' for 2006-2025 or 'fut' for 2076-2095
+        fontsize: int
+
+    Returns: Saves plot to .png file
+
+    '''
     from matplotlib import pyplot as plt
     import matplotlib.patches as mpatches
 
@@ -456,7 +479,10 @@ def plot_figS5_wsi_month_count_maps_by_basin(period='fut', fontsize=12):
 
         for (range_min, range_max) in color_dict:
             color = color_dict[(range_min, range_max)]
-            label = '{} to {}'.format(range_min, range_max)
+            if range_min == 10:
+                label = '10+'
+            else:
+                label = '{} to {}'.format(range_min, range_max)
             df_temp = df.loc[(df['color_{}'.format(plot)] == color)]
 
             if df_temp.empty:
@@ -502,6 +528,14 @@ def plot_figS5_wsi_month_count_maps_by_basin(period='fut', fontsize=12):
 
 
 def preprocess_figS6_median_wsi_by_basin_plus_seasons(plot_list):
+    '''
+    Preprocess data for plotting WSI by basin for each season
+    Args:
+        plot_list: list of strings - names of columns to plot
+
+    Returns: dataframe with colour columns for each plot_list
+
+    '''
     import pandas as pd
     import geopandas as gpd
     import numpy as np
@@ -546,7 +580,7 @@ def preprocess_figS6_median_wsi_by_basin_plus_seasons(plot_list):
         df_by_region[factor] = df_by_region[factor].clip(lower=-99, upper=99)
 
     for col in plot_list:
-        color_dict = common.get_basin_colour_dict(col, reldiff=True)
+        color_dict = common.get_basin_colour_dict(col, reldiff=True, seasonal_flag=True)
         new_var_name = 'color_{}'.format(col)
         df_by_region = df_by_region.assign(
             **{new_var_name: common.make_color_list_for_wsi(df_by_region, col, color_dict)})
@@ -560,6 +594,15 @@ def preprocess_figS6_median_wsi_by_basin_plus_seasons(plot_list):
     return df_by_region
 
 def plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=12):
+    '''
+    Plot WSI by basin for each season on map for S1 and S4, and % difference due to contributing factors
+    Args:
+        period: 'hist' for 2006-2025 or 'fut' for 2076-2095
+        fontsize: int
+
+    Returns: Saves plot to .png file
+
+    '''
     from matplotlib import pyplot as plt
     import matplotlib.patches as mpatches
 
@@ -581,12 +624,15 @@ def plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=12):
 
             panel += 1
             ax = fig.add_subplot(len(plot_list), len(seas_list), panel)
-            color_dict = common.get_basin_colour_dict(plot, reldiff=True)
+            color_dict = common.get_basin_colour_dict(plot, reldiff=True, seasonal_flag=True)
             handle_list = []
 
             for (range_min, range_max) in color_dict:
                 color = color_dict[(range_min, range_max)]
-                label = '{} to {}'.format(range_min, range_max)
+                if range_min==5 and range_max > 100:  # to make label 5+ for top WSI values
+                    label = '5+'
+                else:
+                    label = '{} to {}'.format(range_min, range_max)
                 df_seas = df.xs(seas, level='season')
                 df_temp = df_seas.loc[(df_seas['color_{}'.format(plot)] == color)]
 
@@ -614,9 +660,6 @@ def plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=12):
             if row==0: # Set season title on top row only
                 ax.set_title('{}'.format(seas), fontsize=fontsize+2)
 
-            #plt.text(0.01, 0.97, letters[panel - 1], transform=ax.transAxes, fontsize=fontsize, fontweight='bold',
-            #         va='top', ha='left', bbox=dict(facecolor='white', alpha=1))
-
             if plot in ['CO2: STOM', 'CO2: STOM+VEG', 'CLIM: VEG', 'CO2: STOM & CLIM+CO2: VEG']:
                 # Add text box showing number of basins increasing and decreasing
                 num_incr = (df_seas[plot] > 10).sum()
@@ -643,12 +686,21 @@ def plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=12):
 
     return
 
-#plot_figS1_pop_data_map(yr_range=[2006, 2025])
-#plot_figS1_pop_data_map(yr_range=[2076, 2095])
-### Fig S3 plotted in main plotting file: plot_paper_figures_with_month_WSI.py
-#preprocess_figS4a_calc_month_count_wsi_by_ar6_region_to_csv(period='fut', threshold=0.4)
-#plot_figS4a_wsi_month_count_factors_by_ar6_hbarplots(period='fut', filter=True, fontsize=12, threshold=0.4)
-#preprocess_figS4b_calc_percent_area_wsi_by_ar6_region_to_csv(period='fut', threshold=0.4)
-#plot_figS4b_wsi_percent_area_by_ar6_hbarplots(period='fut', filter=True, fontsize=12, threshold=0.4)
-plot_figS5_wsi_month_count_maps_by_basin(period='fut', fontsize=14)
-#plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=13)
+def main():
+
+    plt.rcParams['font.family'] = 'Arial'
+
+    # To execute preproceesing and plotting of supplementary figures
+    #plot_figS1_pop_data_map(yr_range=[2006, 2025])
+    # plot_figS1_pop_data_map(yr_range=[2076, 2095])
+    # ## Fig S3 plotted in main plotting file: plot_paper_figures_with_month_WSI.py
+    # preprocess_figS4a_calc_month_count_wsi_by_ar6_region_to_csv(period='fut', threshold=0.4)
+    #plot_figS4a_wsi_month_count_factors_by_ar6_hbarplots(period='fut', filter=True, fontsize=12, threshold=0.4)
+    # preprocess_figS4b_calc_percent_area_wsi_by_ar6_region_to_csv(period='fut', threshold=0.4)
+    #plot_figS4b_wsi_percent_area_by_ar6_hbarplots(period='fut', filter=True, fontsize=12, threshold=0.4)
+    #plot_figS5_wsi_month_count_maps_by_basin(period='fut', fontsize=14)
+    plot_figS6_wsi_maps_by_basin_reldiff_by_seasons(period='fut', fontsize=13)
+    return
+
+if __name__ == '__main__':
+    main()
