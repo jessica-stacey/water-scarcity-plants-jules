@@ -7,7 +7,7 @@ Main files:
 2. process_wsi.py : Loads and processes water supply (from processed JULES output) and water demand (from ISIMIP2B database)
 3. plot_paper_figures.py : Code for plotting figures/tables in main paper
 4. plot_paper_figs_SI.py : Code for plotting figures in supplementary information
-5. common_functions_paper.py : Functions 
+5. common_functions_paper.py : Functions used in plotting files for various things
 
 Other files:
 - run_setup.sh : Runs Conda environment
