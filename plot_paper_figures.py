@@ -530,7 +530,7 @@ def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
     cube_dict = preprocess_fig5_global_demand_supply_wsi_timeseries()
     contr_factor_dict = common.calc_contr_factors_timeseries(cube_dict, ['supply', 'wsi'], calc_rel_diff=True)
 
-    print('Plotting fig 1: timeseries of water cycle variables by experiment')
+    print('Plotting fig 5: timeseries of water supply, demand, WSI by experiment')
     fig = plt.figure(figsize=(16, 6))
     fig.subplots_adjust(hspace=0.1, wspace=0.3, top=0.95, bottom=0.01, left=0.075, right=0.8)
 
@@ -592,7 +592,7 @@ def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
     fname = 'fig5_demand_supply_wsi_contr_factors_timeseries.png'
     plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname),
                 dpi=300,  bbox_inches='tight', facecolor='white')
-    print('Figure 4 saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    print('Plot saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
     return
 
 def plot_fig5_as_key_fig(fontsize=14):
@@ -628,7 +628,7 @@ def plot_fig5_as_key_fig(fontsize=14):
         y_vals = cube.data
         color = common.get_experiment_color_dict(experiment)
         plt.plot(x_vals, y_vals, color=color, label=label, linewidth=1.5)
-    ax1.legend(loc='best',ncol=1, fontsize=fontsize)#, fancybox=True, shadow=True)
+    ax1.legend(loc='best', ncol=1, fontsize=fontsize)#, fancybox=True, shadow=True)
     ax1.set_ylabel('Global annual median', fontsize=fontsize)
     ax1.set_title('Water Scarcity Index', fontsize=fontsize + 2)
     ax1.tick_params(labelsize=fontsize)
@@ -1481,8 +1481,8 @@ def main():
     #plot_fig1_global_input_vars_timeseries()
     
     # # # FIGURE 2
-    #plot_fig2_global_multivar_timeseries(var_list_no=1, fontsize=18)
-    #plot_fig2_global_multivar_timeseries(var_list_no=2, fontsize=18)
+    plot_fig2_global_multivar_timeseries(var_list_no=1, fontsize=18)
+    plot_fig2_global_multivar_timeseries(var_list_no=2, fontsize=18)
 
     #
     # # # FIGURE 3
@@ -1517,10 +1517,10 @@ def main():
     #table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False)
 
     ## FIGURE 10
-    select_basins_dict = common.get_select_basins()
-    for basin_id in select_basins_dict: #{294: 'Tigris-Euphrates'}:
-       plot_fig10_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17)
-    plot_fig10_basin_shapes(select_basins_dict) # map in the middle of Figure
+    # select_basins_dict = common.get_select_basins()
+    # for basin_id in select_basins_dict: #{294: 'Tigris-Euphrates'}:
+    #    plot_fig10_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17)
+    # plot_fig10_basin_shapes(select_basins_dict) # map in the middle of Figure
 
     return
 

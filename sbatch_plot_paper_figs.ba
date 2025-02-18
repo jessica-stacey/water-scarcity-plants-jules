@@ -16,4 +16,5 @@ export MPLCONFIGDIR=~/.matplotlib_spice
 #module load scitools/default
 conda activate phys_effects
 
-python plot_paper_figures.py
+#python plot_paper_figures.py
+python AmazonFACE_plots.py

@@ -1,0 +1,107 @@
+The python code in this folder is used in the soil moisture stress evaluation JULES process evaluation group. 
+
+This is just a temporary solution, and there are no guarantees that this code is kept up-to-date or free of bugs.
+
+Please get in touch before using any of this code, and I can put you in contact with the authors, to discuss it further.
+
+Thanks,
+Karina
+
+karina.williams@metoffice.gov.uk
+
+---------------------------------------------------------------------
+Contents
+
+ * jules.py
+ 
+Makes it easier to use JULES output files with Iris (http://scitools.org.uk/iris/docs/latest/index.html). In particular, provides a wrapper to iris.load, iris.load_cube and iris.save to deal with land-points-only data.
+For more information:
+
+    import jules
+    help(jules)
+
+The test suite for jules.py is stored internally in the Met Office.
+
+
+* convertpoints2grid.py
+
+Can convert some types of land-points-only JULES files to a grid from the command line. Usage is
+
+    python2.7 convertpoints2grid.py --inputfile=myinputfile.nc --outputfile=myoutputfile.nc
+
+
+* soil_cosby_parameters.py 
+
+Calculates soil parameters for use in JULES. Can imported into python or called from the command line as:
+
+Example 1:
+    ./soil_cosby_parameters.py --soil_textural_class='Silty clay loam'
+
+Example 2:
+    ./soil_cosby_parameters.py --f_sand=0.10 --f_silt=0.56 --f_clay=0.34
+
+Example 3:
+    ./soil_cosby_parameters.py --soil_textural_class='Silty clay loam' --f_organic=0.8 --soc_layer=1
+
+See 
+    ./soil_cosby_parameters.py --help 
+
+for more information.
+
+
+* test_soil_cosby_parameters.py 
+
+Test suite for soil_cosby_parameters.py.
+
+
+* soil_water_stress_factors.py
+
+Work in progress. Collects together some stress factors from the literature and models. 
+
+
+* test_soil_water_stress_factors.py 
+
+Work in progress. Test suite for soil_water_stress_factors.py.
+
+
+* compare_sinclair_and_jules_p0.py
+
+Plots the Sinclair and JULES water stress functions for each soil textural class.
+
+
+* huntingford2015_equations.py
+
+Python implementation of the equations used in Huntingford 2015 (this is entirely independent of the
+analysis code used by the authors of this paper in the paper itself). This has not been reviewed - please 
+get in touch if you are able to help with this.
+
+
+* test_huntingford2015_equations.py
+
+Test suite for huntingford2015_equations.py.
+
+
+* fluxnet_evaluation.py, test_fluxnet_evaluation.py, make_time_coord.py, list_sites_lba.txt, list_sites_fluxnet2015.txt 
+
+Work in progress. Plotting and analysis routines for the JPEG rose suite.
+
+
+* soil_hydrology.py
+
+Python implementation of the soil hydrology functions in JULES, for use in helping understand their behaviour.
+
+
+* test_soil_hydrology.py
+
+Test suite for soil_hydrology.py
+
+
+* calc_weights.py
+
+Functions for weighting soil variables for converting between schemes with different layer
+thicknesses, and other utils for dealing with soil layers.
+
+
+* test_calc_weights.py
+
+Test suite for calc_weights.py
