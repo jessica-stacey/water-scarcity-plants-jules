@@ -177,8 +177,8 @@ def main():
     YEAR_RANGE = [1861, 2100]  # Full period: 1861 to 2100 - set up to work to FIRST month of end year
 
     # all variables - 'precip','runoff', 'rflow', 'ecan_gb', 'fqw_gb', 'et_stom_gb', 'lai', 'frac', 'surf_roff', 'sub_surf_roff', 'tstar_gb'
-    VAR_LIST = ['precip']
-    EXPERIMENT_LIST = [ 'all_noLUC', 'co2_triffid_fix', 'triffid_fix', 'co2_fix_noLUC']
+    VAR_LIST = ['lai_gb']
+    EXPERIMENT_LIST = ['co2_triffid_fix']#, 'triffid_fix', 'co2_fix_noLUC']'all_noLUC',
     OUTPUT_DIR = '/data/users/jstacey/processed_jules_output/' # Make None if dont want to save cube
 
     FNAME_DICT = {'co2_triffid_fix': '/hpc/data/d01/jstacey/jules_output/ISIMIP_JS_output_CO2triffidfix/',

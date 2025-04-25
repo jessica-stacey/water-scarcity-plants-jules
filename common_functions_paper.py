@@ -97,11 +97,10 @@ def get_experiment_label(experiment):
 
 def get_contr_factor_label(factor):
     # Get labels for isolated factors for timeseries plot legends
-    factor_dict = {'CLIM': 'CLIM',
-                   'STOM': 'CO2: STOM',
-                   'PLANT_PHYS': 'CO2: STOM+VEG',
-                   'VEG_DIST': 'CLIM: VEG',
-                   'PLANT_PHYS_VEG': 'CO2: STOM & CLIM+CO2: VEG'
+    factor_dict = {'STOM': 'S3-S1. CO2: STOM',
+                   'PLANT_PHYS': 'S4-S2. CO2: STOM+VEG',
+                   'VEG_DIST': 'S2-S1. CLIM: VEG',
+                   'PLANT_PHYS_VEG': 'S4-S1. CO2: STOM & CLIM+CO2: VEG'
                    }
     return factor_dict[factor]
 

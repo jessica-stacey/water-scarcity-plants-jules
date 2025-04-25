@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import common_functions_paper as common
 plt.rcParams['font.family'] = 'Arial'
 
-def preprocess_fig1_global_watercycle_timeseries(var_list):
+def preprocess_fig1a_global_watercycle_timeseries(var_list):
     '''
     Preprocesses the data for input variable timeseries plots in Fig 1
     Args:
@@ -47,7 +47,7 @@ def preprocess_fig1_global_watercycle_timeseries(var_list):
 
     return cube_dict
 
-def plot_fig1_global_input_vars_timeseries(fontsize=18):
+def plot_fig1a_global_input_vars_timeseries(plot_dir, fontsize=18):
     '''
     Plots the timeseries of the input data: temperature, precipitation and atmospheric CO2
     Args:
@@ -58,12 +58,11 @@ def plot_fig1_global_input_vars_timeseries(fontsize=18):
     '''
 
     var_list = [ 't1p5m_gb', 'precip', 'co2_mmr']
-    cube_dict = preprocess_fig1_global_watercycle_timeseries(var_list)
+    cube_dict = preprocess_fig1a_global_watercycle_timeseries(var_list)
 
     print('Plotting fig 1: timeseries of water cycle variables by experiment')
     fig = plt.figure(figsize=(17, 3))
     fig.subplots_adjust(hspace=0.02, wspace=0.25, left=0.075, right=0.8)
-    letters = 'abc'
     panel = 0
     for var in var_list:
         var_title = common.get_var_title(var)
@@ -90,172 +89,20 @@ def plot_fig1_global_input_vars_timeseries(fontsize=18):
             plt.xticks(rotation=45)
             plt.locator_params(nbins=5, axis='x')
 
-            plt.text(0.02, 0.96, letters[panel - 1], transform=ax1.transAxes, fontsize=20, fontweight='bold',
-                     va='top', ha='left', bbox=dict(facecolor='white', alpha=0.3))
-
             if panel == 1:
                 ax1.set_ylabel('Global annual mean', fontsize=fontsize)
             if panel == 3:
                 ax1.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), ncol=1, fontsize=fontsize + 2, fancybox=True,
                            shadow=True)
 
-    fname = 'fig1_global_mean_timeseries_input_vars.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Figure saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
-    return
-
-def preprocess_fig2_global_watercycle_timeseries(var_list):
-    '''
-    Preprocesses the data for the global water cycle timeseries plots in Fig 2
-    Args:
-        var_list: list of variable names
-
-    Returns: dictionary of cubes for each variable and experiment
-
-    '''
-    from iris import analysis
-    from iris.analysis import cartography
-
-    cube_dict = {}
-
-    for var in var_list:
-        print('Loading and formatting {} cube'.format(var))
-        for experiment in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC']:
-            fname = '/data/users/jstacey/processed_jules_output/HADGEM2-ES_{}_mean_{}_1861-2100_monthly.nc'.format(
-                experiment, var)
-            cube = iris.load_cube(fname)
-            cube = cube.aggregated_by('year', iris.analysis.MEAN)
-            cube = cube.extract(iris.Constraint(year=lambda cell: 1900 <= cell.point <= 2100))
-
-            for vrb in ['latitude', 'longitude', 'time']:
-                if cube.coord(vrb).has_bounds() == False:
-                    cube.coord(vrb).guess_bounds()
-
-            cube = cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN,
-                                  weights=iris.analysis.cartography.area_weights(cube))
-
-            cube = cube.rolling_window('year', iris.analysis.MEAN, 5)
-            cube_dict[var, experiment] = cube
-
-    return cube_dict
-
-
-
-
-def plot_fig2_global_multivar_timeseries(var_list_no, fontsize=16):
-    '''
-    Plots the timeseries of the water cycle variables for each experiment
-    - these are then joined together in powerpoint!
-    Args:
-        var_list_no: 1 (top row of variables) or 2 (bottom row of variables) in Fig. 2
-        fontsize: int, fontsize for labels
-
-    Returns: Saves plots as .png
-    '''
-
-    if var_list_no == 1:
-        var_list = ['runoff', 'surf_roff', 'sub_surf_roff', 'smc_tot']
-        letters = 'abcdefgh'
-    elif var_list_no == 2:
-        var_list = ['et_stom_gb', 'gs', 'lai_gb']
-        letters = 'ijklmn'
-    else:
-        print('var_list_no. should be assigned to number 1 or 2')
-
-    cube_dict = preprocess_fig2_global_watercycle_timeseries(var_list)
-    contr_factor_dict = common.calc_contr_factors_timeseries(cube_dict, var_list, calc_rel_diff=True)
-
-    print('Plotting fig 1: timeseries of water cycle variables by experiment')
-    fig = plt.figure(figsize=(17, 6))
-
-
-    if len(var_list) == 4:
-        fig.subplots_adjust(hspace=0.02, wspace=0.25, left=0.075, right=0.99)
-    elif len(var_list) == 3: # allow room for legend
-        fig.subplots_adjust(hspace=0.02, wspace=0.25, left=0.075, right=0.8)
-
-    panel = 0
-    for var in var_list:
-        panel = panel + 1
-        ax1 = fig.add_subplot(2, len(var_list), panel)
-        var_title = common.get_var_title(var)
-        print('Plotting var {}'.format(var_title))
-        for experiment in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC']:
-
-            cube = cube_dict[var, experiment]
-            label = common.get_experiment_label(experiment)
-            x_vals = cube.coord('year').points
-            y_vals = cube.data
-            color = common.get_experiment_color_dict(experiment)
-            plt.plot(x_vals, y_vals, color=color, label=label, linewidth=1.5)
-
-            unit_title = common.get_unit_title(var)
-            if var == 'lai_gb':
-                ax1.set_title('Leaf Area Index', fontsize=fontsize+2)  # no units
-                ax1.set_ylim([1.8, 2.5])
-            else:
-                ax1.set_title('{} ({})'.format(var_title, unit_title), fontsize=fontsize+2)
-
-            if var == 'gs': # edit ticks s othey are only to 4 decimal places
-                plt.yticks(ticks=[0.0025, 0.003, 0.0035], labels=[0.0025, 0.0030, 0.0035])
-                #ax1.set_ylim([0.00245, 0.0037])
-
-            plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-            ax1.tick_params(labelsize=fontsize)
-
-            if panel == 1:
-                ax1.set_ylabel('Global annual mean', fontsize=fontsize)
-            if var_list_no == 2 and panel == 3:
-                ax1.legend(loc='center left', bbox_to_anchor=(1.01, 0.5),  ncol=1, fontsize=fontsize, fancybox=True, shadow=True)
-
-            if var_list_no == 2 or var=='smc_tot':
-                plt.text(0.02, 0.04, letters[panel - 1], transform=ax1.transAxes, fontsize=20, fontweight='bold',
-                     va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
-            else:
-                plt.text(0.02, 0.96, letters[panel - 1], transform=ax1.transAxes, fontsize=20, fontweight='bold',
-                         va='top', ha='left', bbox=dict(facecolor='white', alpha=0.3))
-
-
-    for var in var_list:
-        panel = panel + 1
-        ax2 = fig.add_subplot(2, len(var_list), panel)
-        ax2.axhline(y=0, color='dimgray', linestyle='--')
-        for contr_factor in ['STOM', 'PLANT_PHYS', 'VEG_DIST', 'PLANT_PHYS_VEG']:
-            cube = contr_factor_dict[var, contr_factor]
-            x_vals = cube.coord('year').points
-            y_vals = cube.data
-            label = common.get_contr_factor_label(contr_factor)
-            color = common.get_contr_factor_color_dict(contr_factor)
-            if contr_factor == 'PLANT_PHYS_VEG':
-                plt.plot(x_vals, y_vals, color=color, label=label, linewidth=2.0) # thicker line
-            else:
-                plt.plot(x_vals, y_vals, color=color, label=label, linewidth=1.5)
-
-        ax2.tick_params(labelsize=fontsize)
-        plt.xticks(rotation=45)
-        plt.locator_params(nbins=5, axis='x')
-
-        if panel == (len(var_list)+1):
-            ax2.set_ylabel('% difference', fontsize=fontsize)
-        if var_list_no == 2 and panel == 6:
-            ax2.legend(loc='center left', bbox_to_anchor=(1.01, 0.5),  ncol=1, fontsize=fontsize, fancybox=True, shadow=True)
-
-        if var_list_no == 2:
-            plt.text(0.02, 0.04, letters[panel - 1], transform=ax2.transAxes, fontsize=20, fontweight='bold',
-                     va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
-        else:
-            plt.text(0.02, 0.96, letters[panel - 1], transform=ax2.transAxes, fontsize=20, fontweight='bold',
-                     va='top', ha='left', bbox=dict(facecolor='white', alpha=0.3))
-
-    fname = 'fig2_global_mean_timeseries_varlist-{}.png'.format(var_list_no)
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Figure 1 saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig1a_global_mean_timeseries_input_vars.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
 
-def preprocess_fig3_fig4_global_watercycle_maps(var_list, year_range_dict):
+
+def preprocess_fig1b_fig3_global_watercycle_maps(var_list, year_range_dict):
     '''
     Preprocesses the data for the global water cycle maps in Fig 3 and 4, calculating the change between future and historical periods
     Args:
@@ -303,7 +150,7 @@ def preprocess_fig3_fig4_global_watercycle_maps(var_list, year_range_dict):
 
     return change_dict
 
-def plot_fig3_global_change_temp_ppn_map(fontsize=18):
+def plot_fig1b_global_change_temp_ppn_map(plot_dir, fontsize=18):
     '''
     Plots the global maps of change in temperature and precipitation (input variables) between future and historical periods
     Args:
@@ -320,7 +167,7 @@ def plot_fig3_global_change_temp_ppn_map(fontsize=18):
 
     var_list = ['t1p5m_gb', 'precip']
 
-    change_dict = preprocess_fig3_fig4_global_watercycle_maps(var_list, year_range_dict=year_range_dict)
+    change_dict = preprocess_fig1b_fig3_global_watercycle_maps(var_list, year_range_dict=year_range_dict)
 
     fig = plt.figure(figsize=(10, 3))  # (16, 6.5))
     fig.subplots_adjust(hspace=0.02, wspace=0.02, bottom=0.1, top=0.95, left=0.1, right=0.99)
@@ -364,14 +211,163 @@ def plot_fig3_global_change_temp_ppn_map(fontsize=18):
         cbar.set_label('{}'.format(cbar_unit_title), fontsize=fontsize)
         cbar.ax.tick_params(labelsize=fontsize)
 
-    fname = 'fig3_map_mean_change_temp_ppn.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300, bbox_inches='tight',
-                facecolor='white')
-    print('Plot saved /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig1b_map_mean_change_temp_ppn.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
 
-def plot_fig4_global_change_multivar_factors_map():
+def preprocess_fig2_global_watercycle_timeseries(var_list):
+    '''
+    Preprocesses the data for the global water cycle timeseries plots in Fig 2
+    Args:
+        var_list: list of variable names
+
+    Returns: dictionary of cubes for each variable and experiment
+
+    '''
+    from iris import analysis
+    from iris.analysis import cartography
+
+    cube_dict = {}
+
+    for var in var_list:
+        print('Loading and formatting {} cube'.format(var))
+        for experiment in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC']:
+            fname = '/data/users/jstacey/processed_jules_output/HADGEM2-ES_{}_mean_{}_1861-2100_monthly.nc'.format(
+                experiment, var)
+            cube = iris.load_cube(fname)
+            cube = cube.aggregated_by('year', iris.analysis.MEAN)
+            cube = cube.extract(iris.Constraint(year=lambda cell: 1900 <= cell.point <= 2100))
+
+            for vrb in ['latitude', 'longitude', 'time']:
+                if cube.coord(vrb).has_bounds() == False:
+                    cube.coord(vrb).guess_bounds()
+
+            cube = cube.collapsed(['latitude', 'longitude'], iris.analysis.MEAN,
+                                  weights=iris.analysis.cartography.area_weights(cube))
+
+            cube = cube.rolling_window('year', iris.analysis.MEAN, 5)
+            cube_dict[var, experiment] = cube
+
+    return cube_dict
+
+
+
+
+def plot_fig2_global_multivar_timeseries(plot_dir, var_list_no, fontsize=16):
+    '''
+    Plots the timeseries of the water cycle variables for each experiment
+    - these are then joined together in powerpoint!
+    Args:
+        var_list_no: 1 (top row of variables) or 2 (bottom row of variables) in Fig. 2
+        fontsize: int, fontsize for labels
+
+    Returns: Saves plots as .png
+    '''
+
+    if var_list_no == 1:
+        var_list = ['runoff', 'surf_roff', 'sub_surf_roff', 'smc_tot']
+        letters = 'abcdefgh'
+    elif var_list_no == 2:
+        var_list = ['et_stom_gb', 'gs', 'lai_gb']
+        letters = 'ijklmn'
+    else:
+        print('var_list_no. should be assigned to number 1 or 2')
+
+    cube_dict = preprocess_fig2_global_watercycle_timeseries(var_list)
+    contr_factor_dict = common.calc_contr_factors_timeseries(cube_dict, var_list, calc_rel_diff=True)
+
+    print('Plotting fig 1: timeseries of water cycle variables by experiment')
+    fig = plt.figure(figsize=(17.5, 6))
+
+
+    if len(var_list) == 4:
+        fig.subplots_adjust(hspace=0.02, wspace=0.25, left=0.075, right=0.99)
+    elif len(var_list) == 3: # allow room for legend
+        fig.subplots_adjust(hspace=0.02, wspace=0.25, left=0.075, right=0.75)
+
+    panel = 0
+    for var in var_list:
+        panel = panel + 1
+        ax1 = fig.add_subplot(2, len(var_list), panel)
+        var_title = common.get_var_title(var)
+        print('Plotting var {}'.format(var_title))
+        for experiment in ['co2_triffid_fix', 'co2_fix_noLUC', 'triffid_fix', 'all_noLUC']:
+
+            cube = cube_dict[var, experiment]
+            label = common.get_experiment_label(experiment)
+            x_vals = cube.coord('year').points
+            y_vals = cube.data
+            color = common.get_experiment_color_dict(experiment)
+            plt.plot(x_vals, y_vals, color=color, label=label, linewidth=1.5)
+
+            unit_title = common.get_unit_title(var)
+            if var == 'lai_gb':
+                ax1.set_title('Leaf Area Index', fontsize=fontsize+2)  # no units
+                ax1.set_ylim([1.8, 2.5])
+            else:
+                ax1.set_title('{} ({})'.format(var_title, unit_title), fontsize=fontsize+2)
+
+            if var == 'gs': # edit ticks s othey are only to 4 decimal places
+                plt.yticks(ticks=[0.0025, 0.003, 0.0035], labels=[0.0025, 0.0030, 0.0035])
+                #ax1.set_ylim([0.00245, 0.0037])
+
+            plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+            ax1.tick_params(labelsize=fontsize)
+
+            if panel == 1:
+                ax1.set_ylabel('Global annual mean', fontsize=fontsize)
+            if var_list_no == 2 and panel == 3:
+                ax1.legend(loc='center left', bbox_to_anchor=(1.01, 0.5),  ncol=1, fontsize=fontsize, fancybox=True, shadow=True)
+
+            if var_list_no == 2 or var=='smc_tot':
+                plt.text(0.02, 0.04, letters[panel - 1], transform=ax1.transAxes, fontsize=20, fontweight='bold',
+                     va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
+            else:
+                plt.text(0.02, 0.96, letters[panel - 1], transform=ax1.transAxes, fontsize=20, fontweight='bold',
+                         va='top', ha='left', bbox=dict(facecolor='white', alpha=0.3))
+
+
+    for var in var_list:
+        panel = panel + 1
+        ax2 = fig.add_subplot(2, len(var_list), panel)
+        ax2.axhline(y=0, color='dimgray', linestyle='--')
+        for contr_factor in ['VEG_DIST', 'STOM', 'PLANT_PHYS',  'PLANT_PHYS_VEG']:
+            cube = contr_factor_dict[var, contr_factor]
+            x_vals = cube.coord('year').points
+            y_vals = cube.data
+            label = common.get_contr_factor_label(contr_factor)
+            color = common.get_contr_factor_color_dict(contr_factor)
+            if contr_factor == 'PLANT_PHYS_VEG':
+                plt.plot(x_vals, y_vals, color=color, label=label, linewidth=2.0) # thicker line
+            else:
+                plt.plot(x_vals, y_vals, color=color, label=label, linewidth=1.5)
+
+        ax2.tick_params(labelsize=fontsize)
+        plt.xticks(rotation=45)
+        plt.locator_params(nbins=5, axis='x')
+
+        if panel == (len(var_list)+1):
+            ax2.set_ylabel('% difference', fontsize=fontsize)
+        if var_list_no == 2 and panel == 6:
+            ax2.legend(loc='center left', bbox_to_anchor=(1.01, 0.5),  ncol=1, fontsize=fontsize, fancybox=True, shadow=True)
+
+        if var_list_no == 2:
+            plt.text(0.02, 0.04, letters[panel - 1], transform=ax2.transAxes, fontsize=20, fontweight='bold',
+                     va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
+        else:
+            plt.text(0.02, 0.96, letters[panel - 1], transform=ax2.transAxes, fontsize=20, fontweight='bold',
+                     va='top', ha='left', bbox=dict(facecolor='white', alpha=0.3))
+
+    fname = 'fig2_global_mean_timeseries_varlist-{}.png'.format(var_list_no)
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
+
+    return
+
+
+def plot_fig3_global_change_multivar_factors_map(plot_dir):
     '''
     Plots the global maps of change in water cycle variables between future and historical periods
 
@@ -382,7 +378,7 @@ def plot_fig4_global_change_multivar_factors_map():
     year_range_dict = {'hist': [2006, 2025],
                        'fut': [2076, 2095]}
 
-    change_dict = preprocess_fig3_fig4_global_watercycle_maps(var_list, year_range_dict=year_range_dict)
+    change_dict = preprocess_fig1b_fig3_global_watercycle_maps(var_list, year_range_dict=year_range_dict)
     contr_factor_dict = common.calc_contr_factors_map(cube_dict=change_dict, var_list=var_list)
 
     fig = plt.figure(figsize=(16, 8))#(16, 6.5))
@@ -450,15 +446,14 @@ def plot_fig4_global_change_multivar_factors_map():
                 cbar_unit_title = common.get_unit_title(var)
                 common.add_cbar(fig, cf, cbar_unit_title, var=var, cbar_axes_loc=cbar_axes_loc)
 
-    fname = 'fig4_map_mean_change_contr_factors.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Plot saved /home/h06/jstacey/MSc/plots/paper/{}'.format(fname))
+    fname = 'fig3_map_mean_change_contr_factors.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
 
 
-def preprocess_fig5_global_demand_supply_wsi_timeseries():
+def preprocess_fig4_global_demand_supply_wsi_timeseries():
     '''
     Preprocesses the data for the global water cycle timeseries plots in Fig 5
     Returns: dictionary of cubes for each variable and experiment
@@ -514,7 +509,7 @@ def preprocess_fig5_global_demand_supply_wsi_timeseries():
     return cube_out_dict
 
 
-def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
+def plot_fig4_global_demand_supply_wsi_timeseries(plot_dir, fontsize=14):
     '''
     Plots the timeseries of the water cycle variables for each experiment
     Args:
@@ -527,7 +522,7 @@ def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
     import matplotlib.pyplot as plt
     import iris
 
-    cube_dict = preprocess_fig5_global_demand_supply_wsi_timeseries()
+    cube_dict = preprocess_fig4_global_demand_supply_wsi_timeseries()
     contr_factor_dict = common.calc_contr_factors_timeseries(cube_dict, ['supply', 'wsi'], calc_rel_diff=True)
 
     print('Plotting fig 5: timeseries of water supply, demand, WSI by experiment')
@@ -565,7 +560,7 @@ def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
 
     for col, var in enumerate(['supply', 'wsi']):
         ax2 = fig.add_subplot(2, 3, col + 5)
-        for contr_factor in ['STOM', 'PLANT_PHYS', 'VEG_DIST', 'PLANT_PHYS_VEG']:
+        for contr_factor in ['VEG_DIST', 'STOM', 'PLANT_PHYS', 'PLANT_PHYS_VEG']:
             cube = contr_factor_dict[var, contr_factor]
             cube = cube.rolling_window('year', iris.analysis.MEAN, 5)
             label = common.get_contr_factor_label(contr_factor)
@@ -589,13 +584,12 @@ def plot_fig5_global_demand_supply_wsi_timeseries(fontsize=14):
             plt.text(0.022, 0.02, letters[col + 3], transform=ax2.transAxes, fontsize=fontsize, fontweight='bold',
                      va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
 
-    fname = 'fig5_demand_supply_wsi_contr_factors_timeseries.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname),
-                dpi=300,  bbox_inches='tight', facecolor='white')
-    print('Plot saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig4_demand_supply_wsi_contr_factors_timeseries.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
     return
 
-def plot_fig5_as_key_fig(fontsize=14):
+def plot_fig4_as_key_fig(plot_dir, fontsize=14):
     '''
     Plots the key figure edited from Fig 5, showing the timeseries of WSI and the relative difference in WSI when all plant responses are included
     Args:
@@ -608,7 +602,7 @@ def plot_fig5_as_key_fig(fontsize=14):
     import matplotlib.pyplot as plt
     import iris
 
-    cube_dict = preprocess_fig5_global_demand_supply_wsi_timeseries()
+    cube_dict = preprocess_fig4_global_demand_supply_wsi_timeseries()
     contr_factor_dict = common.calc_contr_factors_timeseries(cube_dict, ['supply', 'wsi'], calc_rel_diff=True)
 
     print('Plotting fig 1: timeseries of water cycle variables by experiment')
@@ -651,14 +645,14 @@ def plot_fig5_as_key_fig(fontsize=14):
 
     ax2.legend(loc='best', ncol=1, fontsize=fontsize)
 
-    fname = 'fig5_key_fig_wsi_contr_factors_timeseries.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname),
-                dpi=300,  bbox_inches='tight', facecolor='white')
-    print('Figure 5 key fig saved: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig4_key_fig_wsi_contr_factors_timeseries.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
+
     return
 
 
-def preprocess_fig6_demand_supply_wsi_present_and_change_map():
+def preprocess_fig5_fig6_demand_supply_wsi_present_and_change_map():
     '''
     Preprocesses the data for the global water cycle maps in Fig 6, calculating the change between future and historical periods
     Returns: dictionary of cubes for each variable and experiment
@@ -717,7 +711,7 @@ def preprocess_fig6_demand_supply_wsi_present_and_change_map():
     return temp_dict
 
 
-def plot_fig6_demand_supply_wsi_present_map(fontsize=12):
+def plot_fig5_demand_supply_wsi_present_map(plot_dir, fontsize=12):
     '''
     Plot map of present water demand, supply and WSI for simulation S4
     Args:
@@ -731,7 +725,7 @@ def plot_fig6_demand_supply_wsi_present_map(fontsize=12):
     import matplotlib as mpl
     import iris.plot as iplt
 
-    plot_dict = preprocess_fig6_demand_supply_wsi_present_and_change_map()
+    plot_dict = preprocess_fig5_fig6_demand_supply_wsi_present_and_change_map()
     exp_list = ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']
     temp_dict = {}
 
@@ -790,13 +784,12 @@ def plot_fig6_demand_supply_wsi_present_map(fontsize=12):
         plt.text(0.02, 0.2, letters[panel - 1], transform=ax.transAxes, fontsize=fontsize, fontweight='bold',
                  va='bottom', ha='left', bbox=dict(facecolor='white', alpha=0.3))
 
-    fname = 'fig6_demand_supply_wsi_present_map.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Saving fig6 to /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig5_demand_supply_wsi_present_map.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
-def plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=12):
+def plot_fig6_demand_supply_wsi_change_contr_factors_map(plot_dir, fontsize=12):
     '''
     Plot map of change in demand, supply and WSI between future and present periods for simulations S1 & S4,
     plus contr factors for supply and WSI
@@ -812,7 +805,7 @@ def plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=12):
     import matplotlib as mpl
     import iris.plot as iplt
 
-    plot_dict = preprocess_fig6_demand_supply_wsi_present_and_change_map()
+    plot_dict = preprocess_fig5_fig6_demand_supply_wsi_present_and_change_map()
     exp_list = ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']
     contr_factor_list = ['CLIM', 'ALL', 'STOM', 'PLANT_PHYS', 'VEG_DIST', 'PLANT_PHYS_VEG']
     contr_factor_by_var = {}
@@ -920,14 +913,13 @@ def plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=12):
                         plt.text(-0.4, 0.35, contr_factor_name, fontsize=fontsize, transform=ax.transAxes,
                                  rotation='horizontal', bbox=dict(facecolor=facecolor_dict[factor], alpha=0.3))
 
-    fname = 'fig7_demand_supply_wsi_change_contr_factors_map'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Plot saved to /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig6_demand_supply_wsi_change_contr_factors_map'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
 
-def preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='fut'):
+def preprocess_fig7_median_wsi_by_ar6_region_to_csv(csv_dir, period='fut'):
     '''
     Calculate median WSI for each AR6 region for each experiment and save to csv
     Args:
@@ -962,7 +954,7 @@ def preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='fut'):
     wsi_median_dict = {}
 
     for experiment in ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']:
-        print('Calcualting wsi for {}'.format(experiment))
+        print('Calculating wsi for {}'.format(experiment))
         supply_fname = '/data/users/jstacey/water_demand/ISIMIP2/supply_HADGEM2-ES_{}_2006-2099_runoff_monthly-neg_demand_masked.nc'.format(
             experiment)
         monthly_supply_cube = iris.load_cube(supply_fname)
@@ -987,14 +979,14 @@ def preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='fut'):
     df = df.pivot(index='Region', columns='Experiment', values='WSI Median')
 
     # Save the DataFrame to a CSV
-    fname = 'fig8_median_wsi_by_ar6_{}.csv'.format(period)
-    df.to_csv('/home/h06/jstacey/MSc/csv_files/{}'.format(fname), index=True)
-    print('Dataframe saved to /home/h06/jstacey/MSc/csv_files/{}'.format(fname))
+    fname = 'fig7_median_wsi_by_ar6_{}.csv'.format(period)
+    df.to_csv('{}{}'.format(csv_dir, fname), index=True)
+    print('Dataframe saved to {}{}'.format(csv_dir, fname))
 
     return df
 
 
-def plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13):
+def plot_fig7_wsi_factors_by_ar6_hbarplots(csv_dir, plot_dir, period='fut', fontsize=13):
     '''
     Plot horizontal bar plots of median WSI for each AR6 region for simulations S1 & S4 (left plot)
     and contributing factors (right plot)
@@ -1012,7 +1004,7 @@ def plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13):
     import matplotlib.pyplot as plt
 
     # .csv produced in preprocess_fig8_median_wsi_by_ar6_region_to_csv()
-    df = pd.read_csv('/home/h06/jstacey/MSc/csv_files/fig8_median_wsi_by_ar6_{}.csv'.format(period))
+    df = pd.read_csv('/home/h06/jstacey/MSc/csv_files/fig7_median_wsi_by_ar6_{}.csv'.format(period))
     df = df.set_index('Region')
     df.replace('--', np.nan, inplace=True)
 
@@ -1104,12 +1096,12 @@ def plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13):
     if period == 'hist':
         fname = 'figS3_hbarplots_median_wsi_factors_by_ar6_hist.png'
     else:
-        fname = 'fig8_hbarplots_median_wsi_factors_by_ar6_fut.png'
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
-    print('Plot saved to /home/h06/jstacey/MSc/plots/paper/{}'.format(fname))
+        fname = 'fig7_hbarplots_median_wsi_factors_by_ar6_fut.png'
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
     return
 
-def preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut'):
+def preprocess_fig8_median_wsi_by_riverbasin_to_csv(csv_dir, period='fut'):
     '''
     Calculate median WSI for each river basin for each experiment and save to csv
     Args:
@@ -1179,14 +1171,14 @@ def preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut'):
     df = df.pivot_table(index=['PFAF_ID', 'year', 'month'], columns='Experiment', values='Median')
 
     # Save the DataFrame to a CSV
-    fname = 'fig9_median_monthly_wsi_{}_by_basins.csv'.format(period)
-    df.to_csv('/home/h06/jstacey/MSc/csv_files/{}'.format(fname), index=True)
-    print('Dataframe saved to /home/h06/jstacey/MSc/csv_files/{}'.format(fname))
+    fname = 'fig8_median_monthly_wsi_{}_by_basins.csv'.format(period)
+    df.to_csv('{}{}'.format(csv_dir, fname), index=True)
+    print('Dataframe saved to {}{}'.format(csv_dir, fname))
 
     return df
 
 
-def preprocess_fig9_median_wsi_by_basin(plot_list):
+def preprocess_fig8_median_wsi_by_basin(plot_list, csv_dir):
     '''
     Preprocess data for plotting fig9 - median WSI by basin
     Args:
@@ -1211,8 +1203,7 @@ def preprocess_fig9_median_wsi_by_basin(plot_list):
     basins_df = basins_df[['PFAF_ID', 'geometry']]  # .head(3) # for testing
     basins_df['PFAF_ID'] = basins_df['PFAF_ID'].astype(int)
 
-    df = pd.read_csv(
-        '/home/h06/jstacey/MSc/csv_files/fig9_median_monthly_wsi_fut_by_basins.csv')
+    df = pd.read_csv('{}/fig8_median_monthly_wsi_fut_by_basins.csv'.format(csv_dir))
     df['PFAF_ID'] = df['PFAF_ID'].astype(int)
 
     df = df.replace('--', 0)
@@ -1233,7 +1224,7 @@ def preprocess_fig9_median_wsi_by_basin(plot_list):
 
     return df_by_region
 
-def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
+def plot_fig8_wsi_maps_by_basin_reldiff(period, csv_dir, plot_dir, fontsize=12):
     '''
     Plot maps of median WSI by basin for each experiment
     Args:
@@ -1249,7 +1240,7 @@ def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
 
     plot_list = ['co2_triffid_fix', 'all_noLUC', 'CO2: STOM', 'CO2: STOM+VEG', 'CLIM: VEG', 'CO2: STOM & CLIM+CO2: VEG']
 
-    df = preprocess_fig9_median_wsi_by_basin(plot_list)
+    df = preprocess_fig8_median_wsi_by_basin(plot_list, csv_dir=csv_dir)
 
     print('Plotting time')
     fig = plt.figure(figsize=(14, 8))
@@ -1305,15 +1296,14 @@ def plot_fig9_wsi_maps_by_basin_reldiff(period, fontsize=12):
         plt.text(0.01, 0.97, letters[panel - 1], transform=ax.transAxes, fontsize=fontsize, fontweight='bold',
                  va='top', ha='left', bbox=dict(facecolor='white', alpha=1))
 
-    fname = 'fig9_median_wsi_by_basins_{}_reldiff.png'.format(period)
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Saving plot to /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig8_median_wsi_by_basins_{}_reldiff.png'.format(period)
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
 
     return
 
 
-def table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False):
+def table2_output_basins_pop_incr_decr_to_csv(plot_dir, remove_non_water_scarce_basins=False):
     '''
     Calculate number of basins and population that increase and decrease WSI by a given threshold for each factor
     Args:
@@ -1325,7 +1315,7 @@ def table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=Fal
     import pandas as pd
     period = 'fut'
     factor_list = ['CO2: STOM', 'CO2: STOM+VEG', 'CLIM: VEG', 'CO2: STOM & CLIM+CO2: VEG']
-    df = preprocess_fig9_median_wsi_by_basin(factor_list)
+    df = preprocess_fig8_median_wsi_by_basin(factor_list)
     print(df.columns)
 
     if remove_non_water_scarce_basins:
@@ -1346,13 +1336,14 @@ def table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=Fal
             table_dict = common.calc_basins_incr_decr(df, factor, threshold, table_dict)
 
     df = pd.DataFrame(table_dict)
-    df.to_csv('/home/h06/jstacey/MSc/plots/paper/final/table2_basin_pop_count.csv')
-    print('Table saved to /home/h06/jstacey/MSc/plots/paper/final/table2_basin_pop_count.csv')
+    fname = 'table2_basin_pop_count.csv'
+    df.to_csv('{}{}'.format(plot_dir, fname))
+    print('{}{}'.format(plot_dir, fname))
 
     return
 
 
-def preprocessing_fig10_median_wsi_by_basin_anncycle():
+def preprocessing_fig9_median_wsi_by_basin_anncycle(csv_dir):
     '''
     Preprocess data for plotting fig10 - median WSI by basin for each month
     Returns: DataFrame with median WSI by basin for each experiment
@@ -1368,7 +1359,7 @@ def preprocessing_fig10_median_wsi_by_basin_anncycle():
     exp_list = ['all_noLUC', 'co2_fix_noLUC', 'triffid_fix', 'co2_triffid_fix']
 
     print('Loading basin monthly WSI csv')
-    df = pd.read_csv('/home/h06/jstacey/MSc/csv_files/fig9_median_monthly_wsi_fut_by_basins.csv')
+    df = pd.read_csv('{}/fig8_median_monthly_wsi_fut_by_basins.csv'.format(csv_dir))
     df['PFAF_ID'] = df['PFAF_ID'].astype(int)
 
     df = df.replace('--', 0)
@@ -1382,7 +1373,7 @@ def preprocessing_fig10_median_wsi_by_basin_anncycle():
 
     return df_by_basin_anncycle
 
-def plot_fig10_wsi_anncycle_singlebasin(basin_id, basin_name, font_size=20):
+def plot_fig9_wsi_anncycle_singlebasin(basin_id, basin_name, csv_dir, plot_dir, font_size=20):
     '''
     Plot WSI annual cycle for selected basins - Fig. 10 then put together in powerpoint
     Args:
@@ -1396,7 +1387,7 @@ def plot_fig10_wsi_anncycle_singlebasin(basin_id, basin_name, font_size=20):
     import matplotlib.pyplot as plt
     import common_functions_paper as common
 
-    df = preprocessing_fig10_median_wsi_by_basin_anncycle()
+    df = preprocessing_fig9_median_wsi_by_basin_anncycle(csv_dir)
     df = df.loc[basin_id]
 
     fig = plt.figure(figsize=(3, 3))
@@ -1425,13 +1416,12 @@ def plot_fig10_wsi_anncycle_singlebasin(basin_id, basin_name, font_size=20):
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
 
-    fname = 'fig10_WSI_anncycle_fut_{}.png'.format(basin_name)
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Ann cycle saved to: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = 'fig9_WSI_anncycle_fut_{}.png'.format(basin_name)
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300, bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
     return
 
-def plot_fig10_basin_shapes(basin_dict):
+def plot_fig9_basin_shapes(basin_dict, plot_dir):
     '''
     Plot global map highlighting selected basins
     Args:
@@ -1440,7 +1430,6 @@ def plot_fig10_basin_shapes(basin_dict):
     Returns: Saves plot to .png file
 
     '''
-
 
 
     import cartopy.crs as ccrs
@@ -1466,61 +1455,61 @@ def plot_fig10_basin_shapes(basin_dict):
 
     ax.set_extent((-150, 160, -60, 80), crs=ccrs.PlateCarree())
 
-    fname = "fig10_basins_map.png"
-    plt.savefig('/home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname), dpi=300,
-                bbox_inches='tight', facecolor='white')
-    print('Fig 9 basin map saved to: /home/h06/jstacey/MSc/plots/paper/final/{}'.format(fname))
+    fname = "fig9_basins_map.png"
+    plt.savefig('{}{}'.format(plot_dir, fname), dpi=300,
+            bbox_inches='tight', facecolor='white')
+    print('Plot saved to: {}{}'.format(plot_dir, fname))
     return
 
 def main():
     '''
     Run all functions to produce figures and tables for paper
     '''
+    PLOT_DIR = '/home/h06/jstacey/MSc/plots/paper/' # directory to output plots
+    CSV_OUTPUT_DIR = '/home/h06/jstacey/MSc/csv_files/' # directory to output .csvs
 
     # # # FIGURE 1
-    #plot_fig1_global_input_vars_timeseries()
-    
-    # # # FIGURE 2
-    plot_fig2_global_multivar_timeseries(var_list_no=1, fontsize=18)
-    plot_fig2_global_multivar_timeseries(var_list_no=2, fontsize=18)
-
+    # plot_fig1a_global_input_vars_timeseries(plot_dir=PLOT_DIR)
+    # plot_fig1b_global_change_temp_ppn_map(fontsize=14, plot_dir=PLOT_DIR)
     #
-    # # # FIGURE 3
-    #plot_fig3_global_change_temp_ppn_map(fontsize=14)
+    # # # # FIGURE 2
+    # plot_fig2_global_multivar_timeseries(var_list_no=1, fontsize=18, plot_dir=PLOT_DIR)
+    # plot_fig2_global_multivar_timeseries(var_list_no=2, fontsize=18, plot_dir=PLOT_DIR)
+    #
+    # # # # FIGURE 3
+    # plot_fig3_global_change_multivar_factors_map(plot_dir=PLOT_DIR)
     # #
     # # # FIGURE 4
-    #plot_fig4_global_change_multivar_factors_map()
+    # plot_fig4_global_demand_supply_wsi_timeseries(fontsize=16, plot_dir=PLOT_DIR) # Run on SPICE
+    # plot_fig4_as_key_fig(fontsize=14, plot_dir=PLOT_DIR)
     # #
     # # # FIGURE 5
-    #plot_fig5_global_demand_supply_wsi_timeseries(fontsize=16) # Run on SPICE
-    #plot_fig5_as_key_fig(fontsize=14)
-    # #
-    # # # FIGURE 6
-    #plot_fig6_demand_supply_wsi_present_map(fontsize=14)
+    # plot_fig5_demand_supply_wsi_present_map(fontsize=14, plot_dir=PLOT_DIR)
     #
-    # # FIGURE 7
-    #plot_fig7_demand_supply_wsi_change_contr_factors_map(fontsize=14)
+    # # FIGURE 6
+    # plot_fig6_demand_supply_wsi_change_contr_factors_map(fontsize=14, plot_dir=PLOT_DIR)
 
-    ## FIGURE 8 (and S4)
-    #preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='fut')
-    #plot_fig8_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13)
+    ## FIGURE 7 (and S4)
+    #preprocess_fig7_median_wsi_by_ar6_region_to_csv(period='fut', csv_dir=CSV_OUTPUT_DIR)
+    #plot_fig7_wsi_factors_by_ar6_hbarplots(period='fut', fontsize=13, plot_dir=PLOT_DIR, csv_dir=CSV_OUTPUT_DIR)
 
     ## FIGURE S4 - run here as same function as Fig 7 but hist period
-    #preprocess_fig8_median_wsi_by_ar6_region_to_csv(period='hist')
-    #plot_fig8_wsi_factors_by_ar6_hbarplots(period='hist', fontsize=13)
+    #preprocess_fig7_median_wsi_by_ar6_region_to_csv(period='hist', csv_dir=CSV_OUTPUT_DIR)
+    #plot_fig7_wsi_factors_by_ar6_hbarplots(period='hist', fontsize=13, plot_dir=PLOT_DIR)
 
-    ## FIGURE 9
-    #preprocess_fig9_median_wsi_by_riverbasin_to_csv(period='fut') # creates csv
-    #plot_fig9_wsi_maps_by_basin_reldiff(period='fut', fontsize=14)
+    ## FIGURE 8
+    preprocess_fig8_median_wsi_by_riverbasin_to_csv(period='fut', csv_dir=CSV_OUTPUT_DIR)
+    plot_fig8_wsi_maps_by_basin_reldiff(period='fut', fontsize=14, csv_dir=CSV_OUTPUT_DIR, plot_dir=PLOT_DIR)
 
     ## TABLE 2
-    #table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False)
+    table2_output_basins_pop_incr_decr_to_csv(remove_non_water_scarce_basins=False, plot_dir=PLOT_DIR)
 
-    ## FIGURE 10
-    # select_basins_dict = common.get_select_basins()
-    # for basin_id in select_basins_dict: #{294: 'Tigris-Euphrates'}:
-    #    plot_fig10_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17)
-    # plot_fig10_basin_shapes(select_basins_dict) # map in the middle of Figure
+    ## FIGURE 9
+    select_basins_dict = common.get_select_basins()
+    for basin_id in select_basins_dict: #{294: 'Tigris-Euphrates'}:
+       plot_fig9_wsi_anncycle_singlebasin(basin_id=basin_id, basin_name=select_basins_dict[basin_id], font_size=17,
+                                          csv_dir=CSV_OUTPUT_DIR, plot_dir=PLOT_DIR)
+    plot_fig9_basin_shapes(select_basins_dict, plot_dir=PLOT_DIR) # map in the middle of Figure
 
     return
 
